@@ -164,6 +164,9 @@ export async function syncLiveData(options: SyncLiveDataOptions = {}): Promise<S
     warnings.push("NBA_API_KEY is not set; NBA provider will fall back to mock data.");
   }
   warnings.push("Transfers are editorial/manual today; add a transfer-news API integration to auto-sync transfers.");
+  if (process.env.AI_API_KEY && !process.env.NEWS_API_KEY) {
+    warnings.push("NEWS_API_KEY is not set; skipping viral-news article generation.");
+  }
 
   for (const sport of sports) {
     const provider = getSportsProvider(sport);
