@@ -150,6 +150,10 @@ export class FootballDataProvider implements SportsDataProvider {
   readonly sport = "FOOTBALL" as const;
   /** Falls back to mock data if a live request ever fails, so the site never shows a broken page because of a third-party outage. */
   private fallback = new MockSportsProvider("FOOTBALL");
+  /** In-process cache: without it, getTeamBySlug/getPlayers would re-fetch all
+   *  6 competitions' team lists on every call (e.g. once per team during a
+   *  player sync), multiplying request volume ~7x against a rate-limited API. */
+  private teamsCache: { data: Team[]; expiresAt: number } | null = null;
 
   async getLiveMatches(): Promise<Match[]> {
     try {
@@ -256,6 +260,9 @@ export class FootballDataProvider implements SportsDataProvider {
   }
 
   async getTeams(): Promise<Team[]> {
+    if (this.teamsCache && this.teamsCache.expiresAt > Date.now()) {
+      return this.teamsCache.data;
+    }
     try {
       const responses = await Promise.all(
         Object.entries(LEAGUE_CODE_BY_SLUG).map(async ([leagueSlug, code]) => {
@@ -274,7 +281,9 @@ export class FootballDataProvider implements SportsDataProvider {
         }
       }
 
-      return [...byId.values()];
+      const teams = [...byId.values()];
+      this.teamsCache = { data: teams, expiresAt: Date.now() + 21_600 * 1000 };
+      return teams;
     } catch {
       return this.fallback.getTeams();
     }
