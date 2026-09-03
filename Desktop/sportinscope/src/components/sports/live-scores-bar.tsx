@@ -20,9 +20,7 @@ export function LiveScoresBar({ matches, className }: LiveScoresBarProps) {
   return (
     <div className={cn("border-b border-border bg-surface-raised", className)} aria-label="Live and upcoming scores">
       <div className="container-page flex items-center gap-3 py-3">
-        {/* Cards wrap on mobile (no horizontal swipe needed) — the horizontal-scroll
-            ticker only kicks in from sm: up, where there's room for it to make sense. */}
-        <div className="flex flex-1 flex-wrap gap-3 sm:flex-nowrap sm:overflow-x-auto sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
+        <div className="flex flex-1 gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {matches.map((match) => (
             <ScoreCard key={match.id} match={match} />
           ))}
