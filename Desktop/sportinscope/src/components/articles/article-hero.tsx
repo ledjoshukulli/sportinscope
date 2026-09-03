@@ -64,6 +64,7 @@ export function ArticleHero({ article, className }: ArticleHeroProps) {
             alt={article.title}
             fill
             priority
+            unoptimized={article.featuredImage.includes(".supabase.co/")}
             sizes="(min-width: 1024px) 768px, 100vw"
             className="object-cover"
           />

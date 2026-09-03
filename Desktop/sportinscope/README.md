@@ -94,8 +94,26 @@ See `.env.example` for the full list with inline documentation. Summary:
 | `ADSENSE_CLIENT_ID` / `NEXT_PUBLIC_ADS_ENABLED` | No | Ad slots render as reserved empty space (no CLS) until enabled. |
 | `NEWSLETTER_API_KEY` / `NEWSLETTER_PROVIDER` / `NEWSLETTER_LIST_ID` | No | Subscribers are always stored in the database/mock layer; these additionally forward signups to an ESP. |
 | `AI_API_KEY` | No | Reserved for the optional AI content-assistant integration (`src/lib/ai/content-assistant.ts`); not required to run the app. |
+| `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_STORAGE_BUCKET` | No | Enables admin article-image uploads to a public Supabase Storage bucket. The bucket defaults to `article-images`; never expose the service-role key to the browser. |
 
 **Never commit your real `.env` file.**
+
+### Article image uploads
+
+Create a public Supabase Storage bucket named `article-images` (or set
+`SUPABASE_STORAGE_BUCKET` to your bucket name), then add these server
+environment variables:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_STORAGE_BUCKET=article-images
+```
+
+In the admin article editor, choose **Upload** beside **Featured image URL**.
+The uploaded image URL is filled into the article automatically. The service
+role key is used only by the protected server upload route and must not use a
+`NEXT_PUBLIC_` prefix.
 
 ## Project structure
 

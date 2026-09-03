@@ -20,6 +20,7 @@ export function FeaturedArticle({ article, className }: FeaturedArticleProps) {
             alt={article.title}
             fill
             priority
+            unoptimized={article.featuredImage.includes(".supabase.co/")}
             sizes="100vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />

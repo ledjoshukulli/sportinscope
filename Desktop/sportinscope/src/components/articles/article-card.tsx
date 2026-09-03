@@ -25,6 +25,7 @@ export function ArticleCard({ article, variant = "default", className }: Props) 
               src={article.featuredImage}
               alt={article.title}
               fill
+              unoptimized={article.featuredImage.includes(".supabase.co/")}
               sizes="144px"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -63,6 +64,7 @@ export function ArticleCard({ article, variant = "default", className }: Props) 
             src={article.featuredImage}
             alt={article.title}
             fill
+            unoptimized={article.featuredImage.includes(".supabase.co/")}
             sizes="(min-width: 1024px) 33vw, 100vw"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />

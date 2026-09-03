@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { Wand2, Save } from "lucide-react";
+import { Wand2, Save, Upload } from "lucide-react";
 import { articleInputSchema, type ArticleInput } from "@/lib/validations";
 import type { Article, Author, Category, League, Player, Sport, Tag, Team } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const labelClass = "text-sm font-semibold";
 export function ArticleForm({ article, authors, categories, tags, teams, leagues, players }: ArticleFormProps) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const isEditing = Boolean(article);
 
   const form = useForm<ArticleInput>({
@@ -71,6 +72,29 @@ export function ArticleForm({ article, authors, categories, tags, teams, leagues
   function toggleTag(tagId: string) {
     const current = form.getValues("tagIds") ?? [];
     form.setValue("tagIds", current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId]);
+  }
+
+  async function uploadImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setFormError(null);
+    setUploading(true);
+    const body = new FormData();
+    body.append("file", file);
+    try {
+      const response = await fetch("/api/admin/upload", { method: "POST", body });
+      const data = await response.json();
+      if (!response.ok) {
+        setFormError(data.error ?? "Failed to upload image.");
+        return;
+      }
+      form.setValue("featuredImage", data.url, { shouldValidate: true, shouldDirty: true });
+    } catch {
+      setFormError("Network error while uploading image.");
+    } finally {
+      setUploading(false);
+      event.target.value = "";
+    }
   }
 
   async function onSubmit(values: ArticleInput) {
@@ -155,7 +179,15 @@ export function ArticleForm({ article, authors, categories, tags, teams, leagues
             <label className={labelClass} htmlFor="featuredImage">
               Featured image URL
             </label>
-            <input id="featuredImage" className={inputClass} placeholder="https://…" {...form.register("featuredImage")} />
+            <div className="flex gap-2">
+              <input id="featuredImage" className={inputClass} placeholder="https://…" {...form.register("featuredImage")} />
+              <label className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold hover:bg-muted">
+                <Upload className="h-4 w-4" aria-hidden />
+                {uploading ? "Uploading" : "Upload"}
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={uploadImage} disabled={uploading} />
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">JPG, PNG, WebP, or GIF. Maximum 5 MB.</p>
           </div>
 
           <fieldset className="rounded-md border border-border p-4">
