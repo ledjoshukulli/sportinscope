@@ -36,10 +36,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [];
   },
-
-  eslint: {
-    dirs: ["src", "prisma"],
-  },
 };
 
 export default nextConfig;

@@ -416,7 +416,7 @@ type PrismaArticleRow = {
   category: Article["category"];
   team: Article["team"] | null;
   league: Article["league"] | null;
-  player: Article["player"] | null;
+  player: (Omit<NonNullable<Article["player"]>, "dateOfBirth"> & { dateOfBirth: Date | null }) | null;
   tags: { tag: Article["tags"][number] }[];
   _count?: { views: number };
 };
@@ -442,7 +442,9 @@ function fromPrisma(row: PrismaArticleRow): Article {
     sport: row.sport,
     team: row.team,
     league: row.league,
-    player: row.player,
+    player: row.player
+      ? { ...row.player, dateOfBirth: row.player.dateOfBirth ? row.player.dateOfBirth.toISOString() : null }
+      : null,
     tags: row.tags.map((t) => t.tag),
     views: row._count?.views ?? 0,
   };

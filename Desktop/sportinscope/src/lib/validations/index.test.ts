@@ -49,7 +49,6 @@ describe("articleInputSchema", () => {
   });
 
   it("rejects an invalid sport", () => {
-    // @ts-expect-error intentionally invalid for the test
     const result = articleInputSchema.safeParse({ ...validArticle, sport: "CRICKET" });
     expect(result.success).toBe(false);
   });
