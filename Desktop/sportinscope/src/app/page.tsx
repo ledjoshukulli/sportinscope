@@ -16,7 +16,7 @@ import type { TrendingTopic } from "@/types";
 export const revalidate = 60;
 
 export const metadata: Metadata = buildMetadata({
-  title: "SportInScope — The Game. In Focus.",
+  title: "Football & NBA News, Scores and Analysis",
   description:
     "Breaking football and NBA news, live scores, standings, transfers, and in-depth analysis — all in one place.",
   path: "/",
@@ -57,6 +57,9 @@ export default async function HomePage() {
       <TrendingBar topics={trendingTopics} />
 
       <div className="container-page flex flex-col gap-14 py-8">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+          Football and NBA news, scores, transfers, and analysis
+        </h1>
         {featured ? <FeaturedArticle article={featured} /> : null}
 
         <section aria-labelledby="latest-football-heading">

@@ -1,0 +1,9 @@
+{
+    "name": "SportInScope",
+    "short_name": "SportInScope",
+    "description": "Football and NBA news, scores, transfers, and analysis.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#0f172a"
+}

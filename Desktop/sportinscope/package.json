@@ -17,6 +17,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "sync:live": "tsx scripts/sync-live-data.ts",
+    "generate:articles": "tsx scripts/generate-articles.ts",
     "db:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest",
