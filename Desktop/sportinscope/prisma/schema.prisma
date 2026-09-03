@@ -1,0 +1,319 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// Login-capable account for the admin CMS. Kept separate from Author so a
+/// public byline can exist without a login, and a login doesn't have to
+/// expose a public byline.
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         Role      @default(EDITOR)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  author       Author?
+  sessions     Session[]
+
+  @@index([email])
+}
+
+/// Server-side session record backing the admin auth cookie, so sessions can
+/// be revoked/expired server-side rather than trusting the client alone.
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userAgent String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Public-facing byline. Optionally linked to a User (staff writer) — guest
+/// or syndicated bylines can exist without a login.
+model Author {
+  id        String    @id @default(uuid())
+  userId    String?   @unique
+  name      String
+  slug      String    @unique
+  bio       String?
+  avatarUrl String?
+  twitter   String?
+  title     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  articles  Article[]
+  user      User?     @relation(fields: [userId], references: [id])
+
+  @@index([slug])
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  sport       Sport?
+  articles    Article[]
+
+  @@index([sport])
+}
+
+model Tag {
+  id       String       @id @default(uuid())
+  name     String
+  slug     String       @unique
+  articles ArticleTag[]
+}
+
+model ArticleTag {
+  articleId String
+  tagId     String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tagId])
+  @@index([tagId])
+}
+
+model Article {
+  id              String        @id @default(uuid())
+  title           String
+  slug            String        @unique
+  excerpt         String
+  content         String
+  featuredImage   String?
+  status          ArticleStatus @default(DRAFT)
+  publishedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  readingTimeMins Int           @default(1)
+  seoTitle        String?
+  metaDescription String?
+  canonicalUrl    String?
+  authorId        String
+  categoryId      String
+  sport           Sport
+  teamId          String?
+  leagueId        String?
+  playerId        String?
+  author          Author        @relation(fields: [authorId], references: [id])
+  category        Category      @relation(fields: [categoryId], references: [id])
+  league          League?       @relation(fields: [leagueId], references: [id])
+  player          Player?       @relation(fields: [playerId], references: [id])
+  team            Team?         @relation(fields: [teamId], references: [id])
+  tags            ArticleTag[]
+  views           ArticleView[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([sport, status])
+  @@index([teamId])
+}
+
+/// Individual view events, kept lightweight and privacy-conscious (no raw
+/// IP, no persistent user identifier — sessionHash is a rotating, salted
+/// per-session hash used only to de-duplicate rapid repeat views).
+model ArticleView {
+  id          String   @id @default(uuid())
+  articleId   String
+  viewedAt    DateTime @default(now())
+  referrer    String?
+  sessionHash String?
+  article     Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, viewedAt])
+  @@index([viewedAt])
+}
+
+model League {
+  id        String     @id @default(uuid())
+  name      String
+  slug      String     @unique
+  sport     Sport
+  country   String?
+  logoUrl   String?
+  tier      Int?       @default(1)
+  articles  Article[]
+  matches   Match[]
+  standings Standing[]
+  teams     Team[]
+
+  @@index([sport])
+}
+
+model Team {
+  id             String     @id @default(uuid())
+  name           String
+  slug           String     @unique
+  shortName      String?
+  sport          Sport
+  leagueId       String?
+  logoUrl        String?
+  city           String?
+  foundedYear    Int?
+  colorPrimary   String?
+  colorSecondary String?
+  articles       Article[]
+  awayMatches    Match[]    @relation("AwayTeam")
+  homeMatches    Match[]    @relation("HomeTeam")
+  players        Player[]
+  standings      Standing[]
+  league         League?    @relation(fields: [leagueId], references: [id])
+  transfersFrom  Transfer[] @relation("TransferFrom")
+  transfersTo    Transfer[] @relation("TransferTo")
+
+  @@index([sport])
+  @@index([leagueId])
+}
+
+model Player {
+  id           String     @id @default(uuid())
+  name         String
+  slug         String     @unique
+  sport        Sport
+  teamId       String?
+  position     String?
+  nationality  String?
+  dateOfBirth  DateTime?
+  photoUrl     String?
+  jerseyNumber Int?
+  articles     Article[]
+  team         Team?      @relation(fields: [teamId], references: [id])
+  transfers    Transfer[]
+
+  @@index([sport])
+  @@index([teamId])
+}
+
+model Match {
+  id         String      @id @default(uuid())
+  sport      Sport
+  leagueId   String
+  homeTeamId String
+  awayTeamId String
+  homeScore  Int?
+  awayScore  Int?
+  status     MatchStatus @default(SCHEDULED)
+  startTime  DateTime
+  venue      String?
+  clock      String?
+  externalId String?
+  awayTeam   Team        @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeTeam   Team        @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  league     League      @relation(fields: [leagueId], references: [id])
+
+  @@index([sport, status])
+  @@index([startTime])
+  @@index([leagueId])
+  @@index([externalId])
+}
+
+model Standing {
+  id           String @id @default(uuid())
+  leagueId     String
+  teamId       String
+  season       String
+  position     Int
+  played       Int    @default(0)
+  won          Int    @default(0)
+  drawn        Int    @default(0)
+  lost         Int    @default(0)
+  points       Int    @default(0)
+  goalsFor     Int    @default(0)
+  goalsAgainst Int    @default(0)
+  league       League @relation(fields: [leagueId], references: [id])
+  team         Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([leagueId, teamId, season])
+  @@index([leagueId, season])
+}
+
+model Transfer {
+  id          String         @id @default(uuid())
+  playerName  String
+  playerId    String?
+  fromTeamId  String?
+  toTeamId    String?
+  status      TransferStatus @default(RUMOR)
+  feeAmount   String?
+  source      String
+  sourceUrl   String?
+  sport       Sport          @default(FOOTBALL)
+  reportedAt  DateTime       @default(now())
+  confirmedAt DateTime?
+  fromTeam    Team?          @relation("TransferFrom", fields: [fromTeamId], references: [id])
+  player      Player?        @relation(fields: [playerId], references: [id])
+  toTeam      Team?          @relation("TransferTo", fields: [toTeamId], references: [id])
+
+  @@index([status])
+  @@index([reportedAt])
+  @@index([sport])
+}
+
+model NewsletterSubscriber {
+  id        String           @id @default(uuid())
+  email     String           @unique
+  status    NewsletterStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+
+  @@index([status])
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Sports the platform can cover. New sports are added here without any
+/// schema restructuring — Team/Player/League/Match/Article all key off Sport.
+enum Sport {
+  FOOTBALL
+  NBA
+  NFL
+  MLB
+  F1
+  TENNIS
+  NHL
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+  POSTPONED
+  CANCELLED
+}
+
+enum TransferStatus {
+  RUMOR
+  REPORTED
+  NEGOTIATING
+  MEDICAL
+  CONFIRMED
+}
+
+enum NewsletterStatus {
+  PENDING
+  CONFIRMED
+  UNSUBSCRIBED
+}

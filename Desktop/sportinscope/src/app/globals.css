@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light theme — editorial, high-contrast, warm neutral paper tone. */
+    --background: 30 20% 99%;
+    --foreground: 222 30% 8%;
+    --surface: 0 0% 100%;
+    --surface-raised: 30 20% 97%;
+    --border: 220 14% 90%;
+    --input: 220 14% 90%;
+    --ring: 14 92% 50%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 9% 40%;
+    --primary: 14 92% 50%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 222 30% 8%;
+    --accent-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    /* Dark theme — deep charcoal/navy, not pure black, to keep photos and
+       the accent color from looking harsh. */
+    --background: 222 32% 7%;
+    --foreground: 210 20% 96%;
+    --surface: 222 28% 10%;
+    --surface-raised: 222 26% 13%;
+    --border: 222 20% 18%;
+    --input: 222 20% 18%;
+    --ring: 14 92% 55%;
+    --muted: 222 20% 15%;
+    --muted-foreground: 216 12% 65%;
+    --primary: 14 92% 55%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 210 20% 96%;
+    --accent-foreground: 222 30% 8%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  ::selection {
+    @apply bg-primary/20;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Editorial article body typography. Deliberately not @tailwindcss/typography
+     to keep the bundle lean and styling precise to the brand. */
+  .prose-article {
+    @apply max-w-none text-[1.0625rem] leading-[1.75] text-foreground;
+  }
+  .prose-article p {
+    @apply mb-5;
+  }
+  .prose-article h2 {
+    @apply mb-4 mt-10 font-display text-2xl font-bold tracking-tight;
+  }
+  .prose-article h3 {
+    @apply mb-3 mt-8 font-display text-xl font-bold tracking-tight;
+  }
+  .prose-article a {
+    @apply text-primary underline underline-offset-2 hover:no-underline;
+  }
+  .prose-article blockquote {
+    @apply border-l-2 border-primary pl-4 italic text-muted-foreground;
+  }
+  .prose-article ul {
+    @apply mb-5 list-disc pl-6;
+  }
+  .prose-article ol {
+    @apply mb-5 list-decimal pl-6;
+  }
+  .prose-article img {
+    @apply my-6 rounded-md;
+  }
+
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .kicker {
+    @apply text-xs font-bold uppercase tracking-wider text-primary;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+}

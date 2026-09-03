@@ -1,0 +1,10 @@
+/** Renders any schema.org object built by `@/lib/seo` as a JSON-LD script tag. */
+export function JsonLd({ data }: { data: Record<string, unknown> }) {
+  return (
+    <script
+      type="application/ld+json"
+      // eslint-disable-next-line react/no-danger
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
