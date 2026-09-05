@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/config/site";
-import type { Article, League, Player, Team } from "@/types";
+import type { Article, Author, League, Match, Player, Team } from "@/types";
 
 interface PageMetaInput {
   title: string;
@@ -57,6 +57,23 @@ export function organizationJsonLd() {
   };
 }
 
+export function websiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${siteConfig.url}/search?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
 export function breadcrumbJsonLd(items: { name: string; href: string }[]) {
   return {
     "@context": "https://schema.org",
@@ -71,6 +88,8 @@ export function breadcrumbJsonLd(items: { name: string; href: string }[]) {
 }
 
 export function articleJsonLd(article: Article) {
+  const keywords = article.tags ? article.tags.map((t) => t.name).join(", ") : undefined;
+
   return {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -79,6 +98,9 @@ export function articleJsonLd(article: Article) {
     image: article.featuredImage ? [article.featuredImage] : undefined,
     datePublished: article.publishedAt ?? article.createdAt,
     dateModified: article.updatedAt,
+    inLanguage: "en-US",
+    isAccessibleForFree: true,
+    keywords,
     author: {
       "@type": "Person",
       name: article.author.name,
@@ -94,6 +116,55 @@ export function articleJsonLd(article: Article) {
       "@id": `${siteConfig.url}/article/${article.slug}`,
     },
     articleSection: article.category.name,
+  };
+}
+
+export function sportsEventJsonLd(match: Match) {
+  const statusMap: Record<Match["status"], string> = {
+    SCHEDULED: "https://schema.org/EventScheduled",
+    LIVE: "https://schema.org/EventMovedOnline",
+    FINISHED: "https://schema.org/EventCompleted",
+    POSTPONED: "https://schema.org/EventPostponed",
+    CANCELLED: "https://schema.org/EventCancelled",
+  };
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    name: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+    startDate: match.startTime,
+    eventStatus: statusMap[match.status] ?? "https://schema.org/EventScheduled",
+    sport: match.sport === "FOOTBALL" ? "Soccer" : "Basketball",
+    homeTeam: {
+      "@type": "SportsTeam",
+      name: match.homeTeam.name,
+    },
+    awayTeam: {
+      "@type": "SportsTeam",
+      name: match.awayTeam.name,
+    },
+    location: match.venue
+      ? {
+          "@type": "Place",
+          name: match.venue,
+        }
+      : undefined,
+  };
+}
+
+export function authorJsonLd(author: Author) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: author.name,
+    url: `${siteConfig.url}/author/${author.slug}`,
+    image: author.avatarUrl ?? undefined,
+    description: author.bio ?? undefined,
+    jobTitle: author.title ?? "Sports Journalist",
+    worksFor: {
+      "@type": "Organization",
+      name: siteConfig.name,
+    },
   };
 }
 

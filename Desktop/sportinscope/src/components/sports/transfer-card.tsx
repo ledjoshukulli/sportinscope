@@ -62,6 +62,14 @@ function ClubChip({ team, placeholder }: { team: Transfer["fromTeam"]; placehold
   if (!team) {
     return <span className="text-sm text-muted-foreground">{placeholder}</span>;
   }
+  if (!team.slug) {
+    return (
+      <div className="flex min-w-0 items-center gap-1.5 font-semibold">
+        <TeamLogo src={team.logoUrl} alt={team.name} color={team.colorPrimary} size={20} />
+        <span className="truncate">{team.shortName ?? team.name}</span>
+      </div>
+    );
+  }
   return (
     <Link href={`/team/${team.slug}`} className="flex min-w-0 items-center gap-1.5 font-semibold hover:text-primary">
       <TeamLogo src={team.logoUrl} alt={team.name} color={team.colorPrimary} size={20} />

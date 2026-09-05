@@ -1,4 +1,4 @@
-import type { Article, ArticleSummary, PaginatedResult, Sport } from "@/types";
+import type { Article, ArticleSummary, PaginatedResult, Sport, Tag } from "@/types";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
 import { mockArticles } from "@/lib/mock-data/articles";
 import { estimateReadingTime, slugify } from "@/lib/utils";
@@ -228,12 +228,73 @@ function resolveRelations(input: ArticleInput) {
   const team = input.teamId ? mockTeams.find((t) => t.id === input.teamId) ?? null : null;
   const league = input.leagueId ? mockLeagues.find((l) => l.id === input.leagueId) ?? null : null;
   const player = input.playerId ? mockPlayers.find((p) => p.id === input.playerId) ?? null : null;
-  const tags = mockTags.filter((t) => input.tagIds.includes(t.id));
-  return { author, category, team, league, player, tags };
+  return { author, category, team, league, player };
+}
+
+function getCleanTagInputs(input: ArticleInput): string[] {
+  const rawTags = input.tags && input.tags.length > 0 ? input.tags : input.tagIds ?? [];
+  return Array.from(new Set(rawTags.map((t) => t.trim()).filter(Boolean)));
+}
+
+async function resolveDbTagIds(tagInputs: string[]): Promise<string[]> {
+  const tagIds: string[] = [];
+  for (const rawTag of tagInputs) {
+    const slug = slugify(rawTag) || rawTag.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    if (!slug) continue;
+
+    let tag = await prisma.tag.findFirst({
+      where: {
+        OR: [
+          { id: rawTag },
+          { slug: slug },
+          { name: { equals: rawTag, mode: "insensitive" } },
+        ],
+      },
+    });
+
+    if (!tag) {
+      tag = await prisma.tag.create({
+        data: {
+          name: rawTag,
+          slug: slug,
+        },
+      });
+    }
+
+    if (tag && !tagIds.includes(tag.id)) {
+      tagIds.push(tag.id);
+    }
+  }
+  return tagIds;
+}
+
+function resolveMockTags(tagInputs: string[]): Tag[] {
+  const resolvedTags: Tag[] = [];
+  for (const rawTag of tagInputs) {
+    const slug = slugify(rawTag) || rawTag.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    if (!slug) continue;
+    let existing = mockTags.find(
+      (t) => t.id === rawTag || t.slug === slug || t.name.toLowerCase() === rawTag.toLowerCase()
+    );
+    if (!existing) {
+      existing = {
+        id: `tag-${slug}`,
+        name: rawTag,
+        slug: slug,
+      };
+    }
+    if (!resolvedTags.some((t) => t.id === existing.id)) {
+      resolvedTags.push(existing);
+    }
+  }
+  return resolvedTags;
 }
 
 export async function createArticle(input: ArticleInput): Promise<Article> {
+  const cleanTags = getCleanTagInputs(input);
+
   if (isDatabaseConfigured()) {
+    const tagIds = await resolveDbTagIds(cleanTags);
     const row = await prisma.article.create({
       data: {
         title: input.title,
@@ -253,14 +314,15 @@ export async function createArticle(input: ArticleInput): Promise<Article> {
         teamId: input.teamId || null,
         leagueId: input.leagueId || null,
         playerId: input.playerId || null,
-        tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
+        tags: { create: tagIds.map((tagId) => ({ tagId })) },
       },
       include: articleInclude,
     });
     return fromPrisma(row);
   }
 
-  const { author, category, team, league, player, tags } = resolveRelations(input);
+  const { author, category, team, league, player } = resolveRelations(input);
+  const tags = resolveMockTags(cleanTags);
   const now = new Date().toISOString();
   const article: Article = {
     id: `article-${Date.now()}`,
@@ -291,7 +353,10 @@ export async function createArticle(input: ArticleInput): Promise<Article> {
 }
 
 export async function updateArticle(id: string, input: ArticleInput): Promise<Article | null> {
+  const cleanTags = getCleanTagInputs(input);
+
   if (isDatabaseConfigured()) {
+    const tagIds = await resolveDbTagIds(cleanTags);
     const row = await prisma.article.update({
       where: { id },
       data: {
@@ -312,7 +377,7 @@ export async function updateArticle(id: string, input: ArticleInput): Promise<Ar
         teamId: input.teamId || null,
         leagueId: input.leagueId || null,
         playerId: input.playerId || null,
-        tags: { deleteMany: {}, create: input.tagIds.map((tagId) => ({ tagId })) },
+        tags: { deleteMany: {}, create: tagIds.map((tagId) => ({ tagId })) },
       },
       include: articleInclude,
     });
@@ -321,7 +386,8 @@ export async function updateArticle(id: string, input: ArticleInput): Promise<Ar
 
   const idx = memoryArticles.findIndex((a) => a.id === id);
   if (idx === -1) return null;
-  const { author, category, team, league, player, tags } = resolveRelations(input);
+  const { author, category, team, league, player } = resolveRelations(input);
+  const tags = resolveMockTags(cleanTags);
   const existing = memoryArticles[idx]!;
   const updated: Article = {
     ...existing,

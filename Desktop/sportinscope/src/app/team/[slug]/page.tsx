@@ -87,7 +87,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
 
       <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-10">
-          {team.league ? (
+          {team.league && standings.length > 0 ? (
             <section>
               <SectionHeading title="Standings" href={`/league/${team.league.slug}`} />
               <LeagueTable standings={standings} highlightTeamSlug={team.slug} />
@@ -147,6 +147,16 @@ export default async function TeamPage({ params }: TeamPageProps) {
                 ))}
               </div>
             </section>
+          ) : null}
+
+          {upcoming.length === 0 &&
+          recent.length === 0 &&
+          players.length === 0 &&
+          articlesResult.items.length === 0 &&
+          standings.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No fixtures, standings, or articles on file for {team.name} right now.
+            </p>
           ) : null}
         </div>
 

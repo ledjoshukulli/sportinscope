@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Match } from "@/types";
 import { Badge, LiveBadge } from "@/components/ui/badge";
+import { JsonLd } from "@/components/seo/json-ld";
+import { sportsEventJsonLd } from "@/lib/seo";
 import { TeamLogo } from "./team-logo";
 import { cn, formatDate, formatTime } from "@/lib/utils";
 
@@ -14,16 +16,22 @@ export function MatchCard({ match, className }: MatchCardProps) {
   const isLive = match.status === "LIVE";
   const isFinished = match.status === "FINISHED";
   const hasScore = isLive || isFinished;
+  const leagueSlug = match.league?.slug;
 
   return (
     // @container: layout below reacts to this card's own rendered width, not the viewport,
     // so it stacks correctly even when embedded in a narrow sidebar on a wide screen.
     <div className={cn("@container", className)}>
+      <JsonLd data={sportsEventJsonLd(match)} />
       <div className="flex flex-col gap-3 rounded-md border border-border bg-surface p-4 @xl:flex-row @xl:items-center @xl:justify-between">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground @xl:w-40 @xl:shrink-0">
-          <Link href={`/league/${match.league?.slug ?? ""}`} className="truncate hover:text-primary">
-            {match.league?.name ?? "Match"}
-          </Link>
+          {leagueSlug ? (
+            <Link href={`/league/${leagueSlug}`} className="truncate hover:text-primary">
+              {match.league?.name ?? "Match"}
+            </Link>
+          ) : (
+            <span className="truncate">{match.league?.name ?? "Match"}</span>
+          )}
         </div>
 
         <div className="flex w-full min-w-0 flex-1 items-center justify-center gap-4 @xl:w-auto">
@@ -63,14 +71,9 @@ function TeamColumn({
   score?: number | null;
   align: "left" | "right";
 }) {
-  return (
-    <Link
-      href={`/team/${team.slug}`}
-      className={cn(
-        "flex min-w-0 flex-1 items-center gap-2",
-        align === "right" ? "flex-row-reverse text-right" : "text-left",
-      )}
-    >
+  const isClickable = Boolean(team && team.slug);
+  const content = (
+    <>
       <TeamLogo src={team.logoUrl} alt={team.name} color={team.colorPrimary} size={28} />
       {/* Below @xl container width there isn't room for full names side by side without
           ugly mid-word truncation, so show the short code instead (e.g. "TOU"). */}
@@ -79,6 +82,31 @@ function TeamColumn({
       </span>
       <span className="hidden truncate text-sm font-semibold hover:text-primary @xl:inline">{team.name}</span>
       {score !== undefined ? <span className="ml-1 text-base font-bold tabular-nums">{score ?? "-"}</span> : null}
+    </>
+  );
+
+  if (!isClickable) {
+    return (
+      <div
+        className={cn(
+          "flex min-w-0 flex-1 items-center gap-2",
+          align === "right" ? "flex-row-reverse text-right" : "text-left",
+        )}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={`/team/${team.slug}`}
+      className={cn(
+        "flex min-w-0 flex-1 items-center gap-2",
+        align === "right" ? "flex-row-reverse text-right" : "text-left",
+      )}
+    >
+      {content}
     </Link>
   );
 }

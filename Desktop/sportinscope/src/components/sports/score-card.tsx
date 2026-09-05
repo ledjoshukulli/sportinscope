@@ -14,10 +14,11 @@ export function ScoreCard({ match, className }: ScoreCardProps) {
   const isLive = match.status === "LIVE";
   const isFinished = match.status === "FINISHED";
   const hasScore = isLive || isFinished;
+  const href = match.league?.slug ? `/league/${match.league.slug}` : "/scores";
 
   return (
     <Link
-      href={`/league/${match.league?.slug ?? ""}`}
+      href={href}
       className={cn(
         "flex w-52 shrink-0 flex-col gap-2 rounded-md border border-border bg-surface p-3 transition-colors hover:border-primary/40",
         className,

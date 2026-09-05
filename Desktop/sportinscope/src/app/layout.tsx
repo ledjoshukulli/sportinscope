@@ -8,7 +8,7 @@ import { Footer } from "@/components/layout/footer";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { ThemeProvider, NO_FLASH_THEME_SCRIPT } from "@/components/providers/theme-provider";
 import { JsonLd } from "@/components/seo/json-ld";
-import { organizationJsonLd } from "@/lib/seo";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { GA_ID, analyticsEnabled } from "@/lib/analytics/ga";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
@@ -55,12 +55,22 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+    ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+    : null;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Resource Hints for Core Web Vitals optimization */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        {supabaseHost ? <link rel="preconnect" href={supabaseHost} /> : null}
+
         {/* Must run before paint to avoid a flash of the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
         <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={websiteJsonLd()} />
       </head>
       <body className={`${inter.variable} ${sora.variable} font-sans`}>
         <ThemeProvider>

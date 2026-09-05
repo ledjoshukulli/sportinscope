@@ -24,6 +24,11 @@ export async function getTags(): Promise<Tag[]> {
   return mockTags;
 }
 
+export async function getTagBySlug(slug: string): Promise<Tag | null> {
+  if (isDatabaseConfigured()) return prisma.tag.findUnique({ where: { slug } });
+  return mockTags.find((t) => t.slug === slug) ?? null;
+}
+
 export async function createTag(input: { name: string; slug: string }) {
   if (isDatabaseConfigured()) return prisma.tag.create({ data: input });
   const tag: Tag = { id: `tag-${Date.now()}`, ...input };

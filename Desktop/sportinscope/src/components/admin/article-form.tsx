@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { Wand2, Save, Upload } from "lucide-react";
+import { Wand2, Save, Upload, X, Plus } from "lucide-react";
 import { articleInputSchema, type ArticleInput } from "@/lib/validations";
 import type { Article, Author, Category, League, Player, Sport, Tag, Team } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export function ArticleForm({ article, authors, categories, tags, teams, leagues
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [tagInput, setTagInput] = useState("");
   const isEditing = Boolean(article);
 
   const form = useForm<ArticleInput>({
@@ -48,6 +49,7 @@ export function ArticleForm({ article, authors, categories, tags, teams, leagues
       leagueId: article?.league?.id ?? "",
       playerId: article?.player?.id ?? "",
       tagIds: article?.tags.map((t) => t.id) ?? [],
+      tags: article?.tags.map((t) => t.name) ?? [],
       seoTitle: article?.seoTitle ?? "",
       metaDescription: article?.metaDescription ?? "",
       canonicalUrl: article?.canonicalUrl ?? "",
@@ -62,16 +64,41 @@ export function ArticleForm({ article, authors, categories, tags, teams, leagues
     () => (selectedTeamId ? players.filter((p) => p.teamId === selectedTeamId) : []),
     [players, selectedTeamId],
   );
-  const selectedTagIds = form.watch("tagIds") ?? [];
+  const currentTags = form.watch("tags") ?? [];
 
   function generateSlug() {
     const title = form.getValues("title");
     if (title) form.setValue("slug", slugify(title));
   }
 
-  function toggleTag(tagId: string) {
-    const current = form.getValues("tagIds") ?? [];
-    form.setValue("tagIds", current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId]);
+  function addTag(tagToAdd: string) {
+    const parts = tagToAdd.split(",").map((t) => t.trim()).filter(Boolean);
+    if (parts.length === 0) return;
+    const existing = form.getValues("tags") ?? [];
+    const next = [...existing];
+    for (const part of parts) {
+      if (!next.some((t) => t.toLowerCase() === part.toLowerCase())) {
+        next.push(part);
+      }
+    }
+    form.setValue("tags", next, { shouldDirty: true });
+    setTagInput("");
+  }
+
+  function removeTag(tagToRemove: string) {
+    const existing = form.getValues("tags") ?? [];
+    form.setValue(
+      "tags",
+      existing.filter((t) => t.toLowerCase() !== tagToRemove.toLowerCase()),
+      { shouldDirty: true },
+    );
+  }
+
+  function handleTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addTag(tagInput);
+    }
   }
 
   async function uploadImage(event: React.ChangeEvent<HTMLInputElement>) {
@@ -99,7 +126,20 @@ export function ArticleForm({ article, authors, categories, tags, teams, leagues
 
   async function onSubmit(values: ArticleInput) {
     setFormError(null);
-    const payload = { ...values, slug: values.slug || slugify(values.title) };
+    let finalTags = values.tags ?? [];
+    if (tagInput.trim()) {
+      const parts = tagInput.split(",").map((t) => t.trim()).filter(Boolean);
+      for (const part of parts) {
+        if (!finalTags.some((t) => t.toLowerCase() === part.toLowerCase())) {
+          finalTags = [...finalTags, part];
+        }
+      }
+    }
+    const payload = {
+      ...values,
+      tags: finalTags,
+      slug: values.slug || slugify(values.title),
+    };
     try {
       const res = await fetch(isEditing ? `/api/admin/articles/${article!.id}` : "/api/admin/articles", {
         method: isEditing ? "PATCH" : "POST",
@@ -316,25 +356,81 @@ export function ArticleForm({ article, authors, categories, tags, teams, leagues
             ) : null}
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <span className={labelClass}>Tags</span>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => {
-                const isSelected = selectedTagIds.includes(tag.id);
-                return (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => toggleTag(tag.id)}
-                    className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                      isSelected ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"
-                    }`}
+          <div className="flex flex-col gap-2">
+            <label className={labelClass} htmlFor="tagInput">
+              Tags
+            </label>
+
+            {/* Active tag chips */}
+            <div className="flex flex-wrap gap-2 min-h-[36px] items-center rounded-md border border-border bg-background p-2">
+              {currentTags.length > 0 ? (
+                currentTags.map((tagName) => (
+                  <span
+                    key={tagName}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
                   >
-                    {tag.name}
-                  </button>
-                );
-              })}
+                    {tagName}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tagName)}
+                      className="rounded-full p-0.5 hover:bg-primary/20 hover:text-red-500 focus:outline-none"
+                      aria-label={`Remove tag ${tagName}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-muted-foreground">No tags added yet. Type below to add.</span>
+              )}
             </div>
+
+            {/* Input field + Add button */}
+            <div className="flex gap-2">
+              <input
+                id="tagInput"
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                placeholder="Type a tag name and press Enter..."
+                className={inputClass}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => addTag(tagInput)}
+                disabled={!tagInput.trim()}
+                className="shrink-0"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                Add
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Write any custom tag (separate multiple tags with commas or press Enter).
+            </p>
+
+            {/* Quick add existing tags */}
+            {tags.length > 0 ? (
+              <div className="mt-1 flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Suggestions:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {tags
+                    .filter((t) => !currentTags.some((ct) => ct.toLowerCase() === t.name.toLowerCase()))
+                    .map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => addTag(t.name)}
+                        className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                      >
+                        + {t.name}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

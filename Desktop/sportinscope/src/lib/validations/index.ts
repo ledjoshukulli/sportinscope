@@ -29,6 +29,7 @@ export const articleInputSchema = z.object({
   leagueId: z.string().optional().nullable(),
   playerId: z.string().optional().nullable(),
   tagIds: z.array(z.string()).default([]),
+  tags: z.array(z.string()).default([]),
   seoTitle: z.string().max(70).optional().or(z.literal("")),
   metaDescription: z.string().max(160).optional().or(z.literal("")),
   canonicalUrl: z.string().url().optional().or(z.literal("")),
