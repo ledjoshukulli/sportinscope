@@ -8,6 +8,9 @@ export interface GeneratedArticleContent {
   title: string;
   excerpt: string;
   content: string;
+  seoTitle: string;
+  metaDescription: string;
+  tags: string[];
 }
 
 const BASE_URL = process.env.AI_API_BASE_URL ?? "https://api.openai.com/v1";
@@ -51,5 +54,12 @@ export async function generateArticleFromPrompt(systemPrompt: string, userPrompt
     throw new Error("OpenAI response was missing title/excerpt/content.");
   }
 
-  return { title: parsed.title, excerpt: parsed.excerpt, content: parsed.content };
+  return {
+    title: parsed.title,
+    excerpt: parsed.excerpt,
+    content: parsed.content,
+    seoTitle: parsed.seoTitle || parsed.title,
+    metaDescription: parsed.metaDescription || parsed.excerpt,
+    tags: Array.isArray(parsed.tags) ? parsed.tags.filter((t): t is string => typeof t === "string" && t.trim().length > 0) : [],
+  };
 }

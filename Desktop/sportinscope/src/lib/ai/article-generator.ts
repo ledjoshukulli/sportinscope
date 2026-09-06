@@ -2,27 +2,48 @@ import { generateArticleFromPrompt, type GeneratedArticleContent } from "./opena
 
 const SYSTEM_PROMPT =
   "You are a sports news writer for SportInScope, a football and NBA media outlet. " +
-  "Write factual, neutral, concise news copy using ONLY the data given — never invent " +
-  "stats, quotes, injuries, or lineup details that aren't in the input. Respond with ONLY " +
-  'a JSON object: {"title": string, "excerpt": string, "content": string}. "excerpt" is one ' +
-  'sentence (max 200 characters). "content" is 3-5 short plain-text paragraphs (no markdown headers).';
+  "Write factual, neutral news copy using ONLY the data given — never invent stats, quotes, " +
+  "injuries, or lineup details that aren't in the input. Respond with ONLY a JSON object: " +
+  '{"title": string, "excerpt": string, "content": string, "seoTitle": string, "metaDescription": string, "tags": string[]}. ' +
+  '"excerpt" is one sentence (max 200 characters). "content" is 6-9 plain-text paragraphs ' +
+  "(no markdown headers) with real analysis, context, and implications — not just a brief " +
+  'summary. "seoTitle" is a search-engine-friendly headline (max 70 characters). ' +
+  '"metaDescription" is a search-result summary (max 155 characters). "tags" is 3-6 short, ' +
+  "lowercase keyword tags (team names, league/competition, topic) with no hashtags.";
 
-export interface LeagueRoundupInput {
+export interface MatchOfTheRoundInput {
   leagueName: string;
-  results: { homeTeamName: string; awayTeamName: string; homeScore: number; awayScore: number }[];
+  homeTeamName: string;
+  awayTeamName: string;
+  homeScore: number;
+  awayScore: number;
+  homePosition: number | null;
+  awayPosition: number | null;
 }
 
-/** One roundup article covering every finished match in a league from a single sync run, instead of one article per match. */
-export function generateLeagueRoundup(input: LeagueRoundupInput): Promise<GeneratedArticleContent> {
-  const results = input.results
-    .map((r) => `${r.homeTeamName} ${r.homeScore} - ${r.awayScore} ${r.awayTeamName}`)
-    .join("\n");
-  const userPrompt = `Write a short results roundup article covering these recent matches in one league.
+/** One focused recap of the single standout match from a league's latest finished round, picked as the top-of-table clash. */
+export function generateMatchOfTheRound(input: MatchOfTheRoundInput): Promise<GeneratedArticleContent> {
+  const homeRank = input.homePosition ? ` (${input.homePosition}${ordinalSuffix(input.homePosition)} in the table)` : "";
+  const awayRank = input.awayPosition ? ` (${input.awayPosition}${ordinalSuffix(input.awayPosition)} in the table)` : "";
+  const userPrompt = `Write a short recap article about the standout match of the round in this league.
 League: ${input.leagueName}
-Results:
-${results}
-Summarize the overall picture (notable results, high-scoring games, upsets) using only the scores given — do not invent standings, form, or player details not in this data.`;
+Result: ${input.homeTeamName}${homeRank} ${input.homeScore} - ${input.awayScore} ${input.awayTeamName}${awayRank}
+Focus only on this single match — do not mention other fixtures. Use only the score and table positions given; do not invent goalscorers, lineups, or match events not in this data.`;
   return generateArticleFromPrompt(SYSTEM_PROMPT, userPrompt);
+}
+
+function ordinalSuffix(n: number): string {
+  if (n % 100 >= 11 && n % 100 <= 13) return "th";
+  switch (n % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
 }
 
 export interface TransferArticleInput {
