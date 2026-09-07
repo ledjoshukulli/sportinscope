@@ -37,7 +37,9 @@ export async function POST(request: NextRequest) {
   }
 
   const sports = parseSports(request.nextUrl.searchParams);
-  const since = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
+  // Cron runs every few minutes; a short window prevents replaying a large
+  // historical backlog and keeps Football within the scheduler timeout.
+  const since = new Date(Date.now() - 36 * 60 * 60 * 1000);
 
   try {
     const matches = await prisma.match.findMany({
