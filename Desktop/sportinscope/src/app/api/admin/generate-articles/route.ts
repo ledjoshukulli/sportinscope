@@ -51,26 +51,16 @@ export async function POST(request: NextRequest) {
       select: { id: true },
     });
 
-    let articlesGenerated = 0;
-    let skipped = 0;
-    const errors: string[] = [];
-
-    // Process one candidate at a time; at most one Groq request runs per cron call.
-    for (const match of matches) {
-      const result = await autoGenerateArticles({
-        finishedMatchIds: [match.id],
-        leagueIds: [],
-        mode: "matches",
-      });
-      articlesGenerated += result.articlesGenerated;
-      skipped += result.skipped;
-      errors.push(...result.errors);
-      if (result.articlesGenerated > 0) break;
-    }
+    // One call handles the candidate set and performs at most one AI request.
+    const result = await autoGenerateArticles({
+      finishedMatchIds: matches.map((match) => match.id),
+      leagueIds: [],
+      mode: "matches",
+    });
 
     return NextResponse.json({
       ok: true,
-      result: { articlesGenerated, skipped, errors },
+      result,
       matchesConsidered: matches.length,
     });
   } catch (error) {
