@@ -8,6 +8,7 @@ import { autoGenerateArticles } from "@/lib/ai/auto-generate-articles";
 interface SyncLiveDataOptions {
   sports?: Sport[];
   includePlayers?: boolean;
+  generateArticles?: boolean;
 }
 
 export interface SyncLiveDataResult {
@@ -145,6 +146,7 @@ export async function syncLiveData(options: SyncLiveDataOptions = {}): Promise<S
 
   const sports = options.sports && options.sports.length > 0 ? options.sports : activeSports.map((s) => s.key);
   const includePlayers = options.includePlayers ?? true;
+  const generateArticles = options.generateArticles ?? true;
 
   const leagues = await prisma.league.findMany({ select: { id: true, slug: true, sport: true } });
   const leagueIdsBySlug = new Map(leagues.map((league) => [league.slug, league.id]));
@@ -263,7 +265,7 @@ export async function syncLiveData(options: SyncLiveDataOptions = {}): Promise<S
   }
 
   let articlesGenerated = 0;
-  if (process.env.AI_API_KEY) {
+  if (generateArticles && process.env.AI_API_KEY) {
     try {
       const genResult = await autoGenerateArticles({
         finishedMatchIds,
@@ -274,7 +276,7 @@ export async function syncLiveData(options: SyncLiveDataOptions = {}): Promise<S
     } catch (error) {
       warnings.push(`Article generation failed: ${error instanceof Error ? error.message : "unknown error"}`);
     }
-  } else {
+  } else if (generateArticles) {
     warnings.push("AI_API_KEY is not set; skipping automatic article generation.");
   }
 

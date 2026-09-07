@@ -61,6 +61,8 @@ export interface AutoGenerateArticlesInput {
   finishedMatchIds: string[];
   /** DB ids of leagues whose standings were upserted during the triggering sync run. */
   leagueIds: string[];
+  /** Limits a scheduled run to match articles so it stays within serverless time limits. */
+  mode?: "all" | "matches";
 }
 
 export interface AutoGenerateArticlesResult {
@@ -191,6 +193,8 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
       }
     }
   }
+
+  if (input.mode === "matches") return result;
 
   // --- Standings recaps --------------------------------------------------
   if (input.leagueIds.length > 0) {
