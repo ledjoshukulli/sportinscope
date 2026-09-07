@@ -49,13 +49,28 @@ export async function POST(request: NextRequest) {
       select: { id: true },
     });
 
-    const result = await autoGenerateArticles({
-      finishedMatchIds: matches.map((match) => match.id),
-      leagueIds: [],
-      mode: "matches",
-    });
+    let articlesGenerated = 0;
+    let skipped = 0;
+    const errors: string[] = [];
 
-    return NextResponse.json({ ok: true, result, matchesConsidered: matches.length });
+    // Process one candidate at a time; at most one Groq request runs per cron call.
+    for (const match of matches) {
+      const result = await autoGenerateArticles({
+        finishedMatchIds: [match.id],
+        leagueIds: [],
+        mode: "matches",
+      });
+      articlesGenerated += result.articlesGenerated;
+      skipped += result.skipped;
+      errors.push(...result.errors);
+      if (result.articlesGenerated > 0) break;
+    }
+
+    return NextResponse.json({
+      ok: true,
+      result: { articlesGenerated, skipped, errors },
+      matchesConsidered: matches.length,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown article generation error";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
