@@ -41,9 +41,10 @@ export async function POST(request: NextRequest) {
   const sports = parseSports(request.nextUrl.searchParams);
   const includePlayers = request.nextUrl.searchParams.get("includePlayers") !== "false";
   const generateArticles = request.nextUrl.searchParams.get("generateArticles") !== "false";
+  const scoresOnly = request.nextUrl.searchParams.get("scoresOnly") === "true";
 
   try {
-    const result = await syncLiveData({ sports: sports ?? undefined, includePlayers, generateArticles });
+    const result = await syncLiveData({ sports: sports ?? undefined, includePlayers, generateArticles, scoresOnly });
     return NextResponse.json({ ok: true, result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown sync error";

@@ -9,6 +9,7 @@ interface SyncLiveDataOptions {
   sports?: Sport[];
   includePlayers?: boolean;
   generateArticles?: boolean;
+  scoresOnly?: boolean;
 }
 
 export interface SyncLiveDataResult {
@@ -147,6 +148,7 @@ export async function syncLiveData(options: SyncLiveDataOptions = {}): Promise<S
   const sports = options.sports && options.sports.length > 0 ? options.sports : activeSports.map((s) => s.key);
   const includePlayers = options.includePlayers ?? true;
   const generateArticles = options.generateArticles ?? true;
+  const scoresOnly = options.scoresOnly ?? false;
 
   const leagues = await prisma.league.findMany({ select: { id: true, slug: true, sport: true } });
   const leagueIdsBySlug = new Map(leagues.map((league) => [league.slug, league.id]));
@@ -173,23 +175,28 @@ export async function syncLiveData(options: SyncLiveDataOptions = {}): Promise<S
   for (const sport of sports) {
     const provider = getSportsProvider(sport);
 
-    const providerTeams = await provider.getTeams();
-    for (const team of providerTeams) {
-      const leagueSlug = leagueSlugFromProviderLeagueId(team.leagueId);
-      const leagueId = (leagueSlug ? leagueIdsBySlug.get(leagueSlug) : null) ?? null;
-      await upsertTeam(team, sport, leagueId);
-      teamsUpserted++;
+    const sportLeagues = leagues.filter((league) => league.sport === sport);
+    if (!scoresOnly) {
+      const providerTeams = await provider.getTeams();
+      for (const team of providerTeams) {
+        const leagueSlug = leagueSlugFromProviderLeagueId(team.leagueId);
+        const leagueId = (leagueSlug ? leagueIdsBySlug.get(leagueSlug) : null) ?? null;
+        await upsertTeam(team, sport, leagueId);
+        teamsUpserted++;
+      }
     }
 
-    const sportLeagues = leagues.filter((league) => league.sport === sport);
-    const allMatches = [
-      ...(await provider.getLiveMatches()),
-      ...(await provider.getUpcomingMatches(100)),
-      ...(await provider.getRecentMatches(100)),
-      ...(
-        await Promise.all(sportLeagues.map(async (league) => provider.getMatchesForLeague(league.slug)))
-      ).flat(),
-    ];
+    const leagueMatches = (
+      await Promise.all(sportLeagues.map(async (league) => provider.getMatchesForLeague(league.slug)))
+    ).flat();
+    const allMatches = scoresOnly
+      ? leagueMatches
+      : [
+          ...(await provider.getLiveMatches()),
+          ...(await provider.getUpcomingMatches(100)),
+          ...(await provider.getRecentMatches(100)),
+          ...leagueMatches,
+        ];
 
     const uniqueMatches = new Map<string, Match>();
     for (const match of allMatches) {
@@ -207,7 +214,7 @@ export async function syncLiveData(options: SyncLiveDataOptions = {}): Promise<S
       }
     }
 
-    for (const league of sportLeagues) {
+    if (!scoresOnly) for (const league of sportLeagues) {
       const standings = await provider.getStandings(league.slug);
       for (const row of standings) {
         const teamId = await upsertTeam(row.team, sport, league.id);
