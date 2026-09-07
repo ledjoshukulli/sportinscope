@@ -186,9 +186,11 @@ export async function syncLiveData(options: SyncLiveDataOptions = {}): Promise<S
       }
     }
 
-    const leagueMatches = (
-      await Promise.all(sportLeagues.map(async (league) => provider.getMatchesForLeague(league.slug)))
-    ).flat();
+    const leagueMatches = scoresOnly
+      ? await provider.getRecentMatches(100)
+      : (
+          await Promise.all(sportLeagues.map(async (league) => provider.getMatchesForLeague(league.slug)))
+        ).flat();
     const allMatches = scoresOnly
       ? leagueMatches
       : [

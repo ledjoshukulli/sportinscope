@@ -105,10 +105,11 @@ function toTeamStub(t: ApiTeamRef): Team {
 }
 
 function mapMatch(m: ApiMatch, leagueId: string): Match {
+  const resolvedLeagueId = leagueId === "league-unknown" ? `league-${slugify(m.competition.name)}` : leagueId;
   return {
     id: `fd-match-${m.id}`,
     sport: "FOOTBALL",
-    leagueId,
+    leagueId: resolvedLeagueId,
     // Matches from the general (non-competition-scoped) endpoint don't
     // resolve to one of our known leagues, but the API still tells us the
     // real competition name — show that instead of a generic "Match" label.
