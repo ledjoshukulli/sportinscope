@@ -104,6 +104,9 @@ model Article {
   metaDescription String?
   canonicalUrl    String?
   authorId        String
+  facebookPostId  String?
+  facebookPostedAt DateTime?
+  facebookPostError String?
   categoryId      String
   sport           Sport
   teamId          String?
@@ -120,6 +123,7 @@ model Article {
   @@index([status, publishedAt])
   @@index([categoryId])
   @@index([authorId])
+  @@index([facebookPostedAt])
   @@index([sport, status])
   @@index([teamId])
 }
