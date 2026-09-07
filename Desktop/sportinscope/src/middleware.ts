@@ -8,6 +8,7 @@ const PUBLIC_ADMIN_PATHS = ["/admin/login"];
  * Protects every /admin route except the login page itself. Runs on the
  * Edge runtime, so it verifies the session JWT directly rather than
  * importing lib/auth.ts (which touches Prisma/bcrypt — Node-only APIs).
+ * # --- Newsletter 
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
