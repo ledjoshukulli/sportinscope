@@ -6,7 +6,7 @@ import type { AdminUser } from "@/types";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
 
 const SESSION_COOKIE = "sis_session";
-const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hours
+const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hoursss
 
 function getSecretKey(): Uint8Array {
   const secret = process.env.AUTH_SECRET;
