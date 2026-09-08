@@ -40,6 +40,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Facebook publishing error";
     await prisma.article.update({ where: { id: article.id }, data: { facebookPostError: message.slice(0, 500) } });
-    return NextResponse.json({ ok: false, posted: false, articleId: article.id, error: message }, { status: 502 });
+    return NextResponse.json({ ok: false, posted: false, articleId: article.id, error: message }, { status: 200 });
   }
 }
