@@ -65,15 +65,7 @@ export function CookieConsent() {
             ) : null}
           </div>
         </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-4 left-4 z-40 rounded-md border border-border bg-surface px-3 py-2 text-xs font-semibold shadow"
-        >
-          Cookie settings
-        </button>
-      )}
+      ) : null}
     </>
   );
 }

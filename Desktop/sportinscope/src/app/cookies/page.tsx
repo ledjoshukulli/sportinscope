@@ -66,8 +66,7 @@ export default function CookiesPage() {
         <h2>Managing cookies</h2>
         <p>
           On your first visit, you can accept or reject optional analytics cookies using the cookie preferences
-          banner. You can reopen Cookie settings at any time from the button in the lower-left corner. Most
-          browsers also let you block or delete cookies through their settings.
+          banner. Most browsers also let you block or delete cookies through their settings.
         </p>
 
         <h2>Changes to this policy</h2>

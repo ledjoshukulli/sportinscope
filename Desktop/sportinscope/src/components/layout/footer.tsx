@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Facebook, Instagram, Twitter } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { NewsletterInline } from "@/components/newsletter/newsletter-form";
+import { CookieSettingsLink } from "@/components/providers/cookie-consent";
 import { siteConfig } from "@/config/site";
 import { footerNav } from "@/config/navigation";
 
@@ -32,6 +33,9 @@ export function Footer() {
 
         <FooterColumn title="Sports" items={footerNav.sports} />
         <FooterColumn title="Company" items={footerNav.company} />
+        <div className="lg:hidden">
+          <CookieSettingsLink />
+        </div>
 
         <div>
           <p className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Newsletter</p>
