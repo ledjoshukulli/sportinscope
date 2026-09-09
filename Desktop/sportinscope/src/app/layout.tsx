@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
-import Script from "next/script";
-import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { ThemeProvider, NO_FLASH_THEME_SCRIPT } from "@/components/providers/theme-provider";
+import { CookieConsent } from "@/components/providers/cookie-consent";
 import { JsonLd } from "@/components/seo/json-ld";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
-import { GA_ID, analyticsEnabled } from "@/lib/analytics/ga";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
 
@@ -87,22 +85,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Footer />
           <MobileNav />
           <Toaster position="top-center" richColors closeButton />
-          <Analytics />
+          <CookieConsent />
         </ThemeProvider>
-
-        {analyticsEnabled ? (
-          <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${GA_ID}', { anonymize_ip: true });
-              `}
-            </Script>
-          </>
-        ) : null}
       </body>
     </html>
   );
