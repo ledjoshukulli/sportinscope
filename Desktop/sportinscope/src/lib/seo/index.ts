@@ -132,9 +132,24 @@ export function sportsEventJsonLd(match: Match) {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     name: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+    description: `${match.homeTeam.name} vs ${match.awayTeam.name} ${match.sport === "FOOTBALL" ? "football" : "basketball"} match${match.league ? ` in ${match.league.name}` : ""}.`,
+    image: [
+      match.homeTeam.logoUrl ??
+        match.awayTeam.logoUrl ??
+        `${siteConfig.url}/api/og?title=${encodeURIComponent(`${match.homeTeam.name} vs ${match.awayTeam.name}`)}`,
+    ],
     startDate: match.startTime,
     eventStatus: statusMap[match.status] ?? "https://schema.org/EventScheduled",
     sport: match.sport === "FOOTBALL" ? "Soccer" : "Basketball",
+    organizer: {
+      "@type": "SportsOrganization",
+      name: match.league?.name ?? siteConfig.name,
+      url: match.league ? `${siteConfig.url}/league/${match.league.slug}` : siteConfig.url,
+    },
+    performer: [
+      { "@type": "SportsTeam", name: match.homeTeam.name },
+      { "@type": "SportsTeam", name: match.awayTeam.name },
+    ],
     homeTeam: {
       "@type": "SportsTeam",
       name: match.homeTeam.name,
@@ -143,12 +158,17 @@ export function sportsEventJsonLd(match: Match) {
       "@type": "SportsTeam",
       name: match.awayTeam.name,
     },
-    location: match.venue
-      ? {
-          "@type": "Place",
-          name: match.venue,
-        }
-      : undefined,
+    location: {
+      "@type": "Place",
+      name: match.venue ?? "Venue to be confirmed",
+    },
+    offers: {
+      "@type": "Offer",
+      url: `${siteConfig.url}/scores`,
+      price: "0",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+    },
   };
 }
 
