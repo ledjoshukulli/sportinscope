@@ -33,6 +33,9 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
+  other: {
+    "google-adsense-account": "ca-pub-7172765908709117",
+  },
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
