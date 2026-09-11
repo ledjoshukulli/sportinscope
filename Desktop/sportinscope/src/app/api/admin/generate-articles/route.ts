@@ -30,7 +30,7 @@ async function isAuthorized(request: NextRequest): Promise<boolean> {
   }
 }
 
-/** POST /api/admin/generate-articles — publish selected recent match articles. */
+/** POST /api/admin/generate-articles — generate articles from recent live data. */
 export async function POST(request: NextRequest) {
   if (!(await isAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -50,18 +50,22 @@ export async function POST(request: NextRequest) {
       },
       select: { id: true },
     });
+    const leagues = await prisma.league.findMany({
+      where: sports ? { sport: { in: sports } } : undefined,
+      select: { id: true },
+    });
 
-    // One call handles the candidate set and performs at most one AI request.
     const result = await autoGenerateArticles({
       finishedMatchIds: matches.map((match) => match.id),
-      leagueIds: [],
-      mode: "matches",
+      leagueIds: leagues.map((league) => league.id),
+      mode: "all",
     });
 
     return NextResponse.json({
       ok: true,
       result,
       matchesConsidered: matches.length,
+      leaguesConsidered: leagues.length,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown article generation error";

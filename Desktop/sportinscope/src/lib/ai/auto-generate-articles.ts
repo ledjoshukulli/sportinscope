@@ -98,9 +98,8 @@ async function articleSlugExists(slug: string): Promise<boolean> {
 
 /**
  * Generates articles from live data: one match-of-the-round article per
- * league (the standout top-of-table clash) is published immediately for
- * timely views, while standings recaps, confirmed transfers, and viral news
- * land as DRAFTs in the admin CMS for a human editor to review first. Safe
+ * league (the standout top-of-table clash), standings recaps, confirmed
+ * transfers, and viral news are published immediately for timely views. Safe
  * to call repeatedly: every article has a deterministic slug, so re-runs
  * skip anything already generated instead of duplicating it.
  */
@@ -243,7 +242,8 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
               featuredImage: pickFeaturedImage(league.sport, slug),
               seoTitle: generated.seoTitle.slice(0, 70),
               metaDescription: generated.metaDescription.slice(0, 160),
-              status: "DRAFT",
+              status: "PUBLISHED",
+              publishedAt: new Date(),
               readingTimeMins: estimateReadingTime(generated.content),
               authorId: author.id,
               categoryId,
@@ -300,7 +300,8 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
             featuredImage: pickFeaturedImage(transfer.sport, slug),
             seoTitle: generated.seoTitle.slice(0, 70),
             metaDescription: generated.metaDescription.slice(0, 160),
-            status: "DRAFT",
+            status: "PUBLISHED",
+            publishedAt: new Date(),
             readingTimeMins: estimateReadingTime(generated.content),
             authorId: author.id,
             categoryId,
@@ -355,7 +356,8 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
               featuredImage: pickFeaturedImage(sport, slug),
               seoTitle: generated.seoTitle.slice(0, 70),
               metaDescription: generated.metaDescription.slice(0, 160),
-              status: "DRAFT",
+              status: "PUBLISHED",
+              publishedAt: new Date(),
               readingTimeMins: estimateReadingTime(generated.content),
               authorId: author.id,
               categoryId,
