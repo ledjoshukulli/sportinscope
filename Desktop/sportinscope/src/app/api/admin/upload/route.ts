@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "article-images";
+  const bucket = (process.env.SUPABASE_STORAGE_BUCKET ?? "article-images").trim().replace(/^['"]|['"]$/g, "");
   if (!supabaseUrl || !serviceRoleKey) {
     return NextResponse.json({ error: "Supabase Storage is not configured." }, { status: 503 });
   }
