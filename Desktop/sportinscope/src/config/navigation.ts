@@ -11,6 +11,7 @@ export const mainNav: NavItem[] = [
   { label: "Scores", href: "/scores" },
   { label: "Standings", href: "/standings" },
   { label: "Analysis", href: "/analysis" },
+  { label: "Daily Quiz", href: "/quiz" },
 ];
 
 /** Fixed bottom navigation shown only on mobile. */
@@ -30,6 +31,7 @@ export const footerNav = {
     { label: "Standings", href: "/standings" },
     { label: "Transfers", href: "/transfers" },
     { label: "Analysis", href: "/analysis" },
+    { label: "Daily Quiz", href: "/quiz" },
   ],
   company: [
     { label: "About", href: "/about" },

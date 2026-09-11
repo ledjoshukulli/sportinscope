@@ -14,6 +14,7 @@ const STATIC_ROUTES = [
   "/standings",
   "/transfers",
   "/analysis",
+  "/quiz",
   "/trending",
   "/about",
   "/contact",

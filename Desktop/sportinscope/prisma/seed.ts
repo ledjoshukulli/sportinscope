@@ -36,6 +36,7 @@ import { mockPlayers } from "../src/lib/mock-data/players";
 import { mockStandingsByLeagueSlug } from "../src/lib/mock-data/standings";
 import { mockTransfers } from "../src/lib/mock-data/transfers";
 import { mockArticles } from "../src/lib/mock-data/articles";
+import { allQuizQuestions } from "../src/lib/quiz/questions";
 
 const prisma = new PrismaClient();
 
@@ -341,6 +342,33 @@ async function seedArticles() {
   console.log(`  ✓ ${mockArticles.length} articles (with tags + sample view events)`);
 }
 
+async function seedQuizQuestions() {
+  for (const question of allQuizQuestions) {
+    await prisma.quizQuestion.upsert({
+      where: { id: question.id },
+      update: {
+        category: question.category,
+        question: question.question,
+        options: [...question.options],
+        answer: question.answer,
+        explanation: question.explanation,
+        sourceUrl: question.sourceUrl,
+        isActive: true,
+      },
+      create: {
+        id: question.id,
+        category: question.category,
+        question: question.question,
+        options: [...question.options],
+        answer: question.answer,
+        explanation: question.explanation,
+        sourceUrl: question.sourceUrl,
+      },
+    });
+  }
+  console.log(`  ✓ ${allQuizQuestions.length} quiz questions`);
+}
+
 async function main() {
   console.log("Seeding database…\n");
 
@@ -361,6 +389,7 @@ async function main() {
 
   console.log("\nContent:");
   await seedArticles();
+  await seedQuizQuestions();
 
   console.log("\nDone.");
 }

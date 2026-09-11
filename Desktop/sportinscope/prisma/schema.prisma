@@ -277,6 +277,21 @@ model NewsletterSubscriber {
   @@index([status])
 }
 
+model QuizQuestion {
+  id          String   @id
+  category    String
+  question    String
+  options     Json
+  answer      String
+  explanation String
+  sourceUrl   String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, category])
+}
+
 enum Role {
   ADMIN
   EDITOR
