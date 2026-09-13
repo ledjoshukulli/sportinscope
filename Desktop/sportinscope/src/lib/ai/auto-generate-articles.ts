@@ -97,8 +97,8 @@ async function articleSlugExists(slug: string): Promise<boolean> {
 }
 
 /**
- * Generates articles from live data: one match-of-the-round article per
- * league (the standout top-of-table clash), standings recaps, confirmed
+ * Generates articles from live data: recap articles for finished matches
+ * (across Football, Champions League, NBA, etc.), standings recaps, confirmed
  * transfers, and viral news are published immediately for timely views. Safe
  * to call repeatedly: every article has a deterministic slug, so re-runs
  * skip anything already generated instead of duplicating it.
@@ -109,49 +109,49 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
 
   const author = await getOrCreateAiAuthor();
 
-  // --- Match of the round: for each league, the single standout fixture ---
-  // --- (top-of-table clash, picked from the whole round's fixture list) ---
-  // --- is published the moment THAT match finishes — other matches in the ---
-  // --- same round are ignored even if they finish first. ---
+  // --- Match recaps: generate an article for every finished match ---
   if (input.finishedMatchIds.length > 0) {
     const finishedMatches = await prisma.match.findMany({
       where: { id: { in: input.finishedMatchIds }, status: "FINISHED" },
       include: { homeTeam: true, awayTeam: true, league: true },
+      orderBy: { startTime: "desc" },
     });
 
+    const MAX_MATCH_ARTICLES_PER_RUN = 5;
+    let newMatchArticlesGenerated = 0;
+
     for (const finished of finishedMatches) {
+      if (newMatchArticlesGenerated >= MAX_MATCH_ARTICLES_PER_RUN) {
+        break;
+      }
+
       const league = finished.league;
-      const { start, end, key: roundKey } = getRoundWindow(finished.startTime);
-      const slug = `match-of-the-round-${league.slug}-${roundKey}`;
+      const homeSlug = slugify(finished.homeTeam.name);
+      const awaySlug = slugify(finished.awayTeam.name);
+      const matchIdHash = finished.id.slice(0, 8);
+      const slug = `${homeSlug}-vs-${awaySlug}-recap-${matchIdHash}`;
+
       try {
         if (await articleSlugExists(slug)) {
           result.skipped++;
           continue;
         }
 
-        // The full round's fixture list (any status) decides which match is "the" pick.
-        const roundMatches = await prisma.match.findMany({
-          where: { leagueId: league.id, startTime: { gte: start, lte: end } },
-          include: { homeTeam: true, awayTeam: true },
+        const standings = await prisma.standing.findMany({
+          where: { leagueId: league.id, teamId: { in: [finished.homeTeamId, finished.awayTeamId] } },
         });
-
-        const teamIds = [...new Set(roundMatches.flatMap((m) => [m.homeTeamId, m.awayTeamId]))];
-        const standings = await prisma.standing.findMany({ where: { leagueId: league.id, teamId: { in: teamIds } } });
         const positionByTeamId = new Map(standings.map((s) => [s.teamId, s.position]));
 
-        const best = roundMatches.reduce((top, m) =>
-          matchImportance(m, positionByTeamId) < matchImportance(top, positionByTeamId) ? m : top,
-        );
-
-        if (best.id !== finished.id) {
-          // This finished match isn't the round's identified standout — wait for the pick instead.
-          continue;
+        let categorySlug = league.sport === "NBA" ? "nba-news" : "football-news";
+        if (league.slug.includes("champions-league") || league.name.toLowerCase().includes("champions league")) {
+          categorySlug = "champions-league-news";
         }
-
-        const categorySlug = league.sport === "NBA" ? "nba-news" : "football-news";
-        const categoryId = await getCategoryIdBySlug(categorySlug);
+        let categoryId = await getCategoryIdBySlug(categorySlug);
+        if (!categoryId && categorySlug === "champions-league-news") {
+          categoryId = await getCategoryIdBySlug("football-news");
+        }
         if (!categoryId) {
-          result.errors.push(`Match of the round ${league.id}: missing category "${categorySlug}"`);
+          result.errors.push(`Match recap ${finished.id}: missing category "${categorySlug}"`);
           continue;
         }
 
@@ -164,6 +164,7 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
           homePosition: positionByTeamId.get(finished.homeTeamId) ?? null,
           awayPosition: positionByTeamId.get(finished.awayTeamId) ?? null,
         });
+
         const tagIds = await resolveTagIds([league.name, finished.homeTeam.name, finished.awayTeam.name, ...generated.tags]);
         await withDbReconnectRetry(() =>
           prisma.article.create({
@@ -182,13 +183,15 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
               categoryId,
               sport: league.sport,
               leagueId: league.id,
+              teamId: finished.homeTeamId,
               tags: { create: tagIds.map((tagId) => ({ tagId })) },
             },
           }),
         );
+        newMatchArticlesGenerated++;
         result.articlesGenerated++;
       } catch (error) {
-        result.errors.push(`Match of the round ${league.id}: ${error instanceof Error ? error.message : "unknown error"}`);
+        result.errors.push(`Match recap ${finished.id}: ${error instanceof Error ? error.message : "unknown error"}`);
       }
     }
   }

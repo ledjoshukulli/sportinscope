@@ -11,7 +11,7 @@ const SYSTEM_PROMPT =
   '"metaDescription" is a search-result summary (max 155 characters). "tags" is 3-6 short, ' +
   "lowercase keyword tags (team names, league/competition, topic) with no hashtags.";
 
-export interface MatchOfTheRoundInput {
+export interface MatchRecapInput {
   leagueName: string;
   homeTeamName: string;
   awayTeamName: string;
@@ -21,16 +21,20 @@ export interface MatchOfTheRoundInput {
   awayPosition: number | null;
 }
 
-/** One focused recap of the single standout match from a league's latest finished round, picked as the top-of-table clash. */
-export function generateMatchOfTheRound(input: MatchOfTheRoundInput): Promise<GeneratedArticleContent> {
+export type MatchOfTheRoundInput = MatchRecapInput;
+
+/** One focused recap of a finished match. */
+export function generateMatchRecap(input: MatchRecapInput): Promise<GeneratedArticleContent> {
   const homeRank = input.homePosition ? ` (${input.homePosition}${ordinalSuffix(input.homePosition)} in the table)` : "";
   const awayRank = input.awayPosition ? ` (${input.awayPosition}${ordinalSuffix(input.awayPosition)} in the table)` : "";
-  const userPrompt = `Write a short recap article about the standout match of the round in this league.
+  const userPrompt = `Write a short recap article about this match.
 League: ${input.leagueName}
 Result: ${input.homeTeamName}${homeRank} ${input.homeScore} - ${input.awayScore} ${input.awayTeamName}${awayRank}
 Focus only on this single match — do not mention other fixtures. Use only the score and table positions given; do not invent goalscorers, lineups, or match events not in this data.`;
   return generateArticleFromPrompt(SYSTEM_PROMPT, userPrompt);
 }
+
+export const generateMatchOfTheRound = generateMatchRecap;
 
 function ordinalSuffix(n: number): string {
   if (n % 100 >= 11 && n % 100 <= 13) return "th";
