@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { publishArticleToFacebook } from "@/lib/social/facebook";
 
+export const maxDuration = 60;
+
 async function isAuthorized(request: NextRequest): Promise<boolean> {
   const secret = process.env.SYNC_SECRET;
   if (secret && request.headers.get("authorization") === `Bearer ${secret}`) return true;

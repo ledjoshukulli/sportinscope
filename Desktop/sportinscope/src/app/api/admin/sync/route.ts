@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/auth";
 import { syncLiveData } from "@/lib/api/sync-live-data";
 import type { Sport } from "@/types";
 
+export const maxDuration = 60;
+
 const SPORT_VALUES: Sport[] = ["FOOTBALL", "NBA", "NFL", "MLB", "F1", "TENNIS", "NHL"];
 
 function parseSports(params: URLSearchParams): Sport[] | null {

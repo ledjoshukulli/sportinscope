@@ -107,6 +107,14 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
   const result: AutoGenerateArticlesResult = { articlesGenerated: 0, skipped: 0, errors: [] };
   if (!process.env.AI_API_KEY) return result;
 
+  const startTime = Date.now();
+  const MAX_EXECUTION_TIME_MS = 15000;
+  const MAX_ARTICLES_PER_RUN = 2;
+
+  function isBudgetExceeded(): boolean {
+    return result.articlesGenerated >= MAX_ARTICLES_PER_RUN || Date.now() - startTime > MAX_EXECUTION_TIME_MS;
+  }
+
   const author = await getOrCreateAiAuthor();
 
   // --- Match recaps: generate an article for every finished match ---
@@ -117,11 +125,8 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
       orderBy: { startTime: "desc" },
     });
 
-    const MAX_MATCH_ARTICLES_PER_RUN = 5;
-    let newMatchArticlesGenerated = 0;
-
     for (const finished of finishedMatches) {
-      if (newMatchArticlesGenerated >= MAX_MATCH_ARTICLES_PER_RUN) {
+      if (isBudgetExceeded()) {
         break;
       }
 
@@ -188,7 +193,6 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
             },
           }),
         );
-        newMatchArticlesGenerated++;
         result.articlesGenerated++;
       } catch (error) {
         result.errors.push(`Match recap ${finished.id}: ${error instanceof Error ? error.message : "unknown error"}`);
@@ -199,11 +203,12 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
   if (input.mode === "matches") return result;
 
   // --- Standings recaps --------------------------------------------------
-  if (input.leagueIds.length > 0) {
+  if (input.leagueIds.length > 0 && !isBudgetExceeded()) {
     const leagues = await prisma.league.findMany({ where: { id: { in: input.leagueIds } } });
     const today = new Date().toISOString().slice(0, 10);
 
     for (const league of leagues) {
+      if (isBudgetExceeded()) break;
       const slug = `standings-update-${league.slug}-${today}`;
       try {
         if (await articleSlugExists(slug)) {
@@ -264,15 +269,15 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
   }
 
   // --- Confirmed transfers -------------------------------------------------
-  // Always scanned (not scoped to this sync run) since transfers are logged
-  // manually at arbitrary times; the slug dedup above makes re-scans safe.
-  const confirmedTransfers = await prisma.transfer.findMany({
-    where: { status: "CONFIRMED" },
-    include: { fromTeam: true, toTeam: true },
-  });
+  if (!isBudgetExceeded()) {
+    const confirmedTransfers = await prisma.transfer.findMany({
+      where: { status: "CONFIRMED" },
+      include: { fromTeam: true, toTeam: true },
+    });
 
-  for (const transfer of confirmedTransfers) {
-    const slug = `transfer-update-${transfer.id}`;
+    for (const transfer of confirmedTransfers) {
+      if (isBudgetExceeded()) break;
+      const slug = `transfer-update-${transfer.id}`;
     try {
       if (await articleSlugExists(slug)) {
         result.skipped++;
@@ -321,62 +326,65 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
       result.errors.push(`Transfer ${transfer.id}: ${error instanceof Error ? error.message : "unknown error"}`);
     }
   }
+}
 
   // --- Viral news --------------------------------------------------------
-  // Real trending sports headlines from NewsAPI, rewritten as original
-  // commentary (never a verbatim copy) with the source attributed by name.
-  try {
-    const headlines = await getViralSportsHeadlines(5);
-    for (const headline of headlines) {
-      const slug = `viral-${slugify(headline.title).slice(0, 80)}`;
-      try {
-        if (await articleSlugExists(slug)) {
-          result.skipped++;
-          continue;
+  if (!isBudgetExceeded()) {
+    try {
+      const headlines = await getViralSportsHeadlines(5);
+      for (const headline of headlines) {
+        if (isBudgetExceeded()) break;
+        const slug = `viral-${slugify(headline.title).slice(0, 80)}`;
+        try {
+          if (await articleSlugExists(slug)) {
+            result.skipped++;
+            continue;
+          }
+          const isNba = /nba|basketball/i.test(headline.title);
+          const categorySlug = isNba ? "nba-news" : "football-news";
+          const categoryId = await getCategoryIdBySlug(categorySlug);
+          if (!categoryId) {
+            result.errors.push(`Viral news: missing category "${categorySlug}"`);
+            continue;
+          }
+          const generated = await generateViralNewsArticle({
+            headline: headline.title,
+            description: headline.description,
+            sourceName: headline.sourceName,
+            sourceUrl: headline.url,
+          });
+          const sport: Sport = isNba ? "NBA" : "FOOTBALL";
+          const tagIds = await resolveTagIds(["trending", ...generated.tags]);
+          await withDbReconnectRetry(() =>
+            prisma.article.create({
+              data: {
+                title: generated.title,
+                slug,
+                excerpt: generated.excerpt.slice(0, 320),
+                content: generated.content,
+                featuredImage: pickFeaturedImage(sport, slug),
+                seoTitle: generated.seoTitle.slice(0, 70),
+                metaDescription: generated.metaDescription.slice(0, 160),
+                status: "PUBLISHED",
+                publishedAt: new Date(),
+                readingTimeMins: estimateReadingTime(generated.content),
+                authorId: author.id,
+                categoryId,
+                sport,
+                tags: { create: tagIds.map((tagId) => ({ tagId })) },
+              },
+            }),
+          );
+          result.articlesGenerated++;
+        } catch (error) {
+          result.errors.push(`Viral news "${headline.title}": ${error instanceof Error ? error.message : "unknown error"}`);
         }
-        const isNba = /nba|basketball/i.test(headline.title);
-        const categorySlug = isNba ? "nba-news" : "football-news";
-        const categoryId = await getCategoryIdBySlug(categorySlug);
-        if (!categoryId) {
-          result.errors.push(`Viral news: missing category "${categorySlug}"`);
-          continue;
-        }
-        const generated = await generateViralNewsArticle({
-          headline: headline.title,
-          description: headline.description,
-          sourceName: headline.sourceName,
-          sourceUrl: headline.url,
-        });
-        const sport: Sport = isNba ? "NBA" : "FOOTBALL";
-        const tagIds = await resolveTagIds(["trending", ...generated.tags]);
-        await withDbReconnectRetry(() =>
-          prisma.article.create({
-            data: {
-              title: generated.title,
-              slug,
-              excerpt: generated.excerpt.slice(0, 320),
-              content: generated.content,
-              featuredImage: pickFeaturedImage(sport, slug),
-              seoTitle: generated.seoTitle.slice(0, 70),
-              metaDescription: generated.metaDescription.slice(0, 160),
-              status: "PUBLISHED",
-              publishedAt: new Date(),
-              readingTimeMins: estimateReadingTime(generated.content),
-              authorId: author.id,
-              categoryId,
-              sport,
-              tags: { create: tagIds.map((tagId) => ({ tagId })) },
-            },
-          }),
-        );
-        result.articlesGenerated++;
-      } catch (error) {
-        result.errors.push(`Viral news "${headline.title}": ${error instanceof Error ? error.message : "unknown error"}`);
       }
+    } catch (error) {
+      result.errors.push(`Viral news fetch failed: ${error instanceof Error ? error.message : "unknown error"}`);
     }
-  } catch (error) {
-    result.errors.push(`Viral news fetch failed: ${error instanceof Error ? error.message : "unknown error"}`);
   }
 
   return result;
 }
+
