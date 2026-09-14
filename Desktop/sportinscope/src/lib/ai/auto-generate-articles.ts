@@ -3,6 +3,7 @@ import { prisma, withDbReconnectRetry } from "@/lib/db";
 import { estimateReadingTime, slugify } from "@/lib/utils";
 import { generateMatchOfTheRound, generateStandingsRecap, generateTransferArticle, generateViralNewsArticle } from "@/lib/ai/article-generator";
 import { getViralSportsHeadlines } from "@/lib/ai/news-provider";
+import { findArticleImage } from "@/lib/ai/image-finder";
 import type { Sport } from "@/types";
 
 /** Fixtures aren't tagged with a round/matchday, so an ISO week is used as the round proxy. */
@@ -171,6 +172,13 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
         });
 
         const tagIds = await resolveTagIds([league.name, finished.homeTeam.name, finished.awayTeam.name, ...generated.tags]);
+        const featuredImage = await findArticleImage({
+          query: `${finished.homeTeam.name} ${finished.awayTeam.name} ${league.name}`,
+          sport: league.sport,
+          seed: slug,
+          leagueSlug: league.slug,
+        });
+
         await withDbReconnectRetry(() =>
           prisma.article.create({
             data: {
@@ -178,7 +186,7 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
               slug,
               excerpt: generated.excerpt.slice(0, 320),
               content: generated.content,
-              featuredImage: pickFeaturedImage(league.sport, slug),
+              featuredImage,
               seoTitle: generated.seoTitle.slice(0, 70),
               metaDescription: generated.metaDescription.slice(0, 160),
               status: "PUBLISHED",
@@ -240,6 +248,13 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
           })),
         });
         const tagIds = await resolveTagIds([league.name, "standings", ...generated.tags]);
+        const featuredImage = await findArticleImage({
+          query: `${league.name} football table standings stadium`,
+          sport: league.sport,
+          seed: slug,
+          leagueSlug: league.slug,
+        });
+
         await withDbReconnectRetry(() =>
           prisma.article.create({
             data: {
@@ -247,7 +262,7 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
               slug,
               excerpt: generated.excerpt.slice(0, 320),
               content: generated.content,
-              featuredImage: pickFeaturedImage(league.sport, slug),
+              featuredImage,
               seoTitle: generated.seoTitle.slice(0, 70),
               metaDescription: generated.metaDescription.slice(0, 160),
               status: "PUBLISHED",
@@ -298,6 +313,13 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
       });
       const leagueId = transfer.toTeam?.leagueId ?? transfer.fromTeam?.leagueId ?? null;
       const tagIds = await resolveTagIds([transfer.playerName, transfer.fromTeam?.name, transfer.toTeam?.name, ...generated.tags]);
+      const featuredImage = await findArticleImage({
+        query: `${transfer.playerName} ${transfer.toTeam?.name ?? transfer.fromTeam?.name ?? "transfer football"}`,
+        sport: transfer.sport,
+        seed: slug,
+        leagueSlug: "transfers",
+      });
+
       await withDbReconnectRetry(() =>
         prisma.article.create({
           data: {
@@ -305,7 +327,7 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
             slug,
             excerpt: generated.excerpt.slice(0, 320),
             content: generated.content,
-            featuredImage: pickFeaturedImage(transfer.sport, slug),
+            featuredImage,
             seoTitle: generated.seoTitle.slice(0, 70),
             metaDescription: generated.metaDescription.slice(0, 160),
             status: "PUBLISHED",
@@ -355,6 +377,13 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
           });
           const sport: Sport = isNba ? "NBA" : "FOOTBALL";
           const tagIds = await resolveTagIds(["trending", ...generated.tags]);
+          const featuredImage = await findArticleImage({
+            query: headline.title,
+            sport,
+            seed: slug,
+            leagueSlug: isNba ? "nba" : "football",
+          });
+
           await withDbReconnectRetry(() =>
             prisma.article.create({
               data: {
@@ -362,7 +391,7 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
                 slug,
                 excerpt: generated.excerpt.slice(0, 320),
                 content: generated.content,
-                featuredImage: pickFeaturedImage(sport, slug),
+                featuredImage,
                 seoTitle: generated.seoTitle.slice(0, 70),
                 metaDescription: generated.metaDescription.slice(0, 160),
                 status: "PUBLISHED",
