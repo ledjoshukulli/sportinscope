@@ -11,11 +11,12 @@ interface PageMetaInput {
   publishedTime?: string | null;
   modifiedTime?: string | null;
   noIndex?: boolean;
+  canonicalUrl?: string | null;
 }
 
 /** Central metadata builder — every page composes its <Metadata> through this so title templates, OG, and Twitter cards stay consistent site-wide. */
 export function buildMetadata(input: PageMetaInput): Metadata {
-  const url = `${siteConfig.url}${input.path}`;
+  const url = input.canonicalUrl || `${siteConfig.url}${input.path}`;
   const image = input.image ?? `${siteConfig.url}${siteConfig.ogImage}`;
 
   return {

@@ -30,7 +30,7 @@ const STATIC_ROUTES = [
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [{ items: articles }, teams, players, leagues, authors, tags] = await Promise.all([
-    getPublishedArticles({ limit: 500 }),
+    getPublishedArticles({ limit: 50000 }),
     getAllTeams(),
     getAllPlayers(),
     getAllLeagues(),

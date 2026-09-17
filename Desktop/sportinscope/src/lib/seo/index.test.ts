@@ -8,6 +8,16 @@ describe("buildMetadata", () => {
     expect(meta.alternates?.canonical).toBe(`${siteConfig.url}/about`);
   });
 
+  it("uses custom canonical URL when provided", () => {
+    const meta = buildMetadata({
+      title: "Custom Canonical",
+      description: "Test description",
+      path: "/article/my-slug",
+      canonicalUrl: "https://example.com/original-article",
+    });
+    expect(meta.alternates?.canonical).toBe("https://example.com/original-article");
+  });
+
   it("allows indexing by default", () => {
     const meta = buildMetadata({ title: "Test", description: "Desc", path: "/" });
     expect(meta.robots).toEqual({ index: true, follow: true });

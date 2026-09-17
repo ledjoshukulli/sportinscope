@@ -33,6 +33,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     type: "article",
     publishedTime: article.publishedAt,
     modifiedTime: article.updatedAt,
+    canonicalUrl: article.canonicalUrl,
   });
 }
 
