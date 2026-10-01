@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
-import Script from "next/script";
 import { Toaster } from "sonner";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
@@ -9,6 +8,7 @@ import { ThemeProvider, NO_FLASH_THEME_SCRIPT } from "@/components/providers/the
 import { CookieConsent } from "@/components/providers/cookie-consent";
 import { JsonLd } from "@/components/seo/json-ld";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { adsEnabled, adsenseClientId } from "@/lib/ads";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
 
@@ -64,11 +64,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7172765908709117"
-          crossOrigin="anonymous"
-        />
+        {adsEnabled && adsenseClientId ? (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`}
+            crossOrigin="anonymous"
+          />
+        ) : null}
         {/* Resource Hints for Core Web Vitals optimization */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://images.unsplash.com" />

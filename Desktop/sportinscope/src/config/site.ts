@@ -1,5 +1,9 @@
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001").replace(/\/+$/, "");
 
+if (process.env.NODE_ENV === "production" && siteUrl.includes("localhost")) {
+  throw new Error("NEXT_PUBLIC_SITE_URL must be configured with the public site URL in production.");
+}
+
 export const siteConfig = {
   name: process.env.NEXT_PUBLIC_SITE_NAME ?? "SportInScope",
   tagline: "The Game. In Focus.",

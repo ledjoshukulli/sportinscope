@@ -10,8 +10,12 @@
  */
 export function isDatabaseConfigured(): boolean {
   const url = process.env.DATABASE_URL;
-  if (!url) return false;
-  if (url.includes("user:password@host")) return false;
+  if (!url || url.includes("user:password@host")) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("DATABASE_URL must be configured in production; refusing to serve bundled mock content.");
+    }
+    return false;
+  }
   return true;
 }
 

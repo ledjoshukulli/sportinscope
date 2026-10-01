@@ -7,17 +7,13 @@ export const revalidate = 300;
 export async function GET() {
   const { items: articles } = await getPublishedArticles({ limit: 100 });
 
-  // Google News sitemaps include articles from the past 48 hours (or fallback to recent)
+  // Google News sitemaps must only include articles published in the past 48 hours.
   const now = Date.now();
   const twoDaysMs = 48 * 60 * 60 * 1000;
-  let newsArticles = articles.filter((a) => {
+  const newsArticles = articles.filter((a) => {
     const pubTime = new Date(a.publishedAt ?? a.createdAt).getTime();
     return now - pubTime <= twoDaysMs;
   });
-
-  if (newsArticles.length === 0) {
-    newsArticles = articles.slice(0, 10);
-  }
 
   const urlEntries = newsArticles
     .map((article) => {
