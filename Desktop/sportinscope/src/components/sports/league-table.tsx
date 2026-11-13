@@ -16,6 +16,9 @@ export function LeagueTable({ standings, className, highlightTeamSlug }: LeagueT
   if (sorted.length === 0) {
     return <p className="text-sm text-muted-foreground">Standings aren&apos;t available yet.</p>;
   }
+  if (sorted[0]?.team.sport === "NBA") {
+    return <NbaStandingsTable standings={sorted} className={className} highlightTeamSlug={highlightTeamSlug} />;
+  }
 
   return (
     <div className={cn("overflow-x-auto rounded-md border border-border", className)}>
@@ -64,6 +67,56 @@ export function LeagueTable({ standings, className, highlightTeamSlug }: LeagueT
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function NbaStandingsTable({ standings, className, highlightTeamSlug }: LeagueTableProps) {
+  const conferences = [...new Set(standings.map((row) => row.conference ?? "NBA"))];
+  const source = standings[0]?.source;
+  return (
+    <div className={cn("flex flex-col gap-6", className)}>
+      {conferences.map((conference) => (
+        <section key={conference}>
+          <h3 className="mb-3 font-display text-lg font-bold">{conference} · {standings[0]?.season}</h3>
+          <div className="overflow-x-auto rounded-md border border-border">
+            <table className="w-full min-w-[480px] text-left text-sm">
+              <caption className="sr-only">{conference} NBA standings</caption>
+              <thead className="bg-surface-raised text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  {["Rank", "Team", "W", "L", "PCT", "GB"].map((label) => (
+                    <th key={label} scope="col" className={cn("px-3 py-2.5", label !== "Team" && "text-center")}>{label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {standings.filter((row) => (row.conference ?? "NBA") === conference)
+                  .sort((a, b) => a.position - b.position).map((row) => (
+                    <tr key={row.id} className={cn("border-t border-border", row.team.slug === highlightTeamSlug ? "bg-primary/5" : "hover:bg-muted/40")}>
+                      <td className="px-3 py-2.5 text-center font-bold tabular-nums">{row.position}</td>
+                      <td className="px-3 py-2.5">
+                        <Link href={`/team/${row.team.slug}`} className="flex items-center gap-2 font-semibold hover:text-primary">
+                          <TeamLogo src={row.team.logoUrl} alt={row.team.name} size={20} />
+                          {row.team.name}
+                        </Link>
+                      </td>
+                      <td className="px-3 py-2.5 text-center tabular-nums">{row.won}</td>
+                      <td className="px-3 py-2.5 text-center tabular-nums">{row.lost}</td>
+                      <td className="px-3 py-2.5 text-center tabular-nums">{(row.winPercentage ?? (row.played ? row.won / row.played : 0)).toFixed(3)}</td>
+                      <td className="px-3 py-2.5 text-center tabular-nums">{row.gamesBehind === undefined ? "—" : row.gamesBehind === 0 ? "—" : row.gamesBehind}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ))}
+      {source ? (
+        <p className="text-xs text-muted-foreground">
+          Source: <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-primary underline">{source.name}</a>.
+          {" "}Standings data is cached for one hour. PCT = winning percentage; GB = games behind the conference leader.
+        </p>
+      ) : null}
     </div>
   );
 }

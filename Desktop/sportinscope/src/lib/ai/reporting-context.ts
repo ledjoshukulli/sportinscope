@@ -43,7 +43,7 @@ export function buildMatchContext(match: ReportedMatch, history: ReportedMatch[]
   lines.push("These are available recorded results, not necessarily a complete recent-form sample. Final scores do not describe tactics or match events.");
   lines.push(match.externalId?.startsWith("fd-match-")
     ? "Data source: football-data.org (https://www.football-data.org/)."
-    : "Data source: balldontlie (https://www.balldontlie.io/). NBA standings are not available from this integration.");
+    : "Data source: balldontlie (https://www.balldontlie.io/). NBA standings are not part of this match recap's source data.");
   return lines.join("\n\n");
 }
 

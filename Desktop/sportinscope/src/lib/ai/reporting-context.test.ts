@@ -36,7 +36,7 @@ describe("sourced match context", () => {
     expect(context).not.toContain("bdl-game-124");
     expect(context).not.toContain("demo-125");
     expect(context).toContain("not necessarily a complete");
-    expect(context).toContain("NBA standings are not available");
+    expect(context).toContain("NBA standings are not part of this match recap");
   });
 });
 

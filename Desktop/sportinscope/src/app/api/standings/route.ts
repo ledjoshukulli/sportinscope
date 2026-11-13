@@ -14,11 +14,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unknown league" }, { status: 404 });
   }
 
-  const provider = getSportsProvider(league.sport);
-  const standings = await provider.getStandings(leagueSlug);
-
-  return NextResponse.json(
-    { league, standings },
-    { headers: { "Cache-Control": "public, max-age=0, s-maxage=120, stale-while-revalidate=600" } },
-  );
+  try {
+    const provider = getSportsProvider(league.sport);
+    const standings = await provider.getStandings(leagueSlug);
+    return NextResponse.json(
+      { league, standings },
+      { headers: { "Cache-Control": "public, max-age=0, s-maxage=120, stale-while-revalidate=600" } },
+    );
+  } catch (error) {
+    console.error(`Standings request failed for ${leagueSlug}:`, error);
+    return NextResponse.json({ error: "Standings are temporarily unavailable." }, { status: 502 });
+  }
 }

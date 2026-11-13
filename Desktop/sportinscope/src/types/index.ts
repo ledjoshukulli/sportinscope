@@ -109,6 +109,10 @@ export interface Standing {
   points: number;
   goalsFor: number;
   goalsAgainst: number;
+  conference?: "Eastern Conference" | "Western Conference";
+  winPercentage?: number;
+  gamesBehind?: number;
+  source?: { name: string; url: string };
 }
 
 export interface Transfer {

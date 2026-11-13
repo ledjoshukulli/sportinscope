@@ -8,6 +8,7 @@ interface LeagueStandings {
   slug: string;
   name: string;
   standings: Standing[];
+  error?: string;
 }
 
 export function StandingsTabs({ leagues }: { leagues: LeagueStandings[] }) {
@@ -16,7 +17,9 @@ export function StandingsTabs({ leagues }: { leagues: LeagueStandings[] }) {
       items={leagues.map((league) => ({
         key: league.slug,
         label: league.name,
-        content: <LeagueTable standings={league.standings} />,
+        content: league.error ? (
+          <p role="alert" className="text-sm text-muted-foreground">{league.error}</p>
+        ) : <LeagueTable standings={league.standings} />,
       }))}
     />
   );

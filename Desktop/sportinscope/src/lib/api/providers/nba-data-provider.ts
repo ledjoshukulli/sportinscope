@@ -1,6 +1,7 @@
 import type { Match, Player, Standing, Team } from "@/types";
 import type { SportsDataProvider } from "./types";
 import { MockSportsProvider } from "./mock-provider";
+import { getEspnNbaStandings } from "./espn-nba-standings";
 
 /**
  * Live implementation backed by balldontlie.io (v1). Activated automatically
@@ -139,11 +140,8 @@ export class NBADataProvider implements SportsDataProvider {
   }
 
   async getStandings(leagueSlug: string): Promise<Standing[]> {
-    if (process.env.NODE_ENV === "production") {
-      console.warn("NBA standings unavailable: this provider does not implement live standings. Demo tables will not be shown.");
-      return [];
-    }
-    return this.fallback.getStandings(leagueSlug);
+    if (leagueSlug !== "nba") throw new Error(`Unsupported NBA league: ${leagueSlug}`);
+    return getEspnNbaStandings();
   }
 
   async getTeams(): Promise<Team[]> {

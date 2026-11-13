@@ -217,8 +217,12 @@ reviewed every article unless the workflow actually enforces it.
 
 Demo sports providers are disabled in production, including fallbacks after failed API
 requests. Configure valid `FOOTBALL_API_KEY` and `NBA_API_KEY` credentials; missing or
-failed live data surfaces an error instead of fabricated scores. The current NBA provider
-does not implement live standings and returns an explicitly logged unavailable table.
+failed live data surfaces an error instead of fabricated scores. NBA conference standings
+use ESPN's public, unofficial JSON feed without an additional API key, cached for one hour.
+The feed supplies conference ranks, wins, losses, winning percentage, and games behind.
+Failures or malformed data are reported rather than replaced with demo rankings. Public
+access is not a commercial-use license or availability guarantee; review ESPN's applicable
+terms before relying on this feed for an ad-supported site.
 
 Match generation requires a supported live-provider external ID and complete scores.
 It adds earlier sourced results from the same league where available, with an incomplete-sample

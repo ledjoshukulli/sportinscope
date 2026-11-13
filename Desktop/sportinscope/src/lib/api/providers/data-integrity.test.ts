@@ -26,11 +26,10 @@ describe("production sports data integrity", () => {
     expect(warning).toHaveBeenCalled();
   });
 
-  it("reports unavailable NBA standings instead of displaying a demo ranking", async () => {
+  it("reports a failed NBA standings feed instead of displaying a demo ranking", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
-    expect(await new NBADataProvider().getStandings("nba")).toEqual([]);
-    expect(warning).toHaveBeenCalledWith(expect.stringContaining("does not implement live standings"));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 503 })));
+    await expect(new NBADataProvider().getStandings("nba")).rejects.toThrow("ESPN NBA standings request failed: 503");
   });
 
   it("still allows a successful live provider to run in production", async () => {

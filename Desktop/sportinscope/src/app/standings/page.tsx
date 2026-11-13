@@ -19,11 +19,23 @@ export default async function StandingsPage() {
   );
 
   const leagues = await Promise.all(
-    leagueRefs.map(async (league) => ({
-      slug: league.slug,
-      name: league.name,
-      standings: await getSportsProvider(league.sport).getStandings(league.slug),
-    })),
+    leagueRefs.map(async (league) => {
+      try {
+        return {
+          slug: league.slug,
+          name: league.name,
+          standings: await getSportsProvider(league.sport).getStandings(league.slug),
+        };
+      } catch (error) {
+        console.error(`Standings unavailable for ${league.slug}:`, error);
+        return {
+          slug: league.slug,
+          name: league.name,
+          standings: [],
+          error: `${league.name} standings are temporarily unavailable. Please try again later.`,
+        };
+      }
+    }),
   );
 
   return (

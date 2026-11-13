@@ -41,7 +41,8 @@ export default function AboutPage() {
         <h2>Sources and limitations</h2>
         <p>
           Football results and tables use football-data.org; NBA results use balldontlie.
-          Our NBA integration does not currently provide live standings. We do not substitute demo
+          NBA conference standings use ESPN&apos;s publicly accessible, unofficial standings feed.
+          We do not substitute demo
           tables for unavailable live data in production. News summaries attribute the underlying
           publisher and do not imply that we independently verified its full report.
         </p>
