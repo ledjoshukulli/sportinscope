@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { Article } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { ShareBar } from "./share-bar";
@@ -54,6 +55,12 @@ export function ArticleHero({ article, className }: ArticleHeroProps) {
             </span>
           </span>
         </div>
+        {article.author.slug === "ai-desk" ? (
+          <p className="rounded-md border border-border bg-surface p-3 text-sm text-muted-foreground">
+            AI-generated and automatically published without human pre-publication review.{" "}
+            <Link href="/about" className="text-primary underline">Sources, limitations, and corrections</Link>.
+          </p>
+        ) : null}
         <ShareBar path={`/article/${article.slug}`} title={article.title} />
       </div>
 
@@ -69,6 +76,9 @@ export function ArticleHero({ article, className }: ArticleHeroProps) {
             className="object-cover"
           />
         </figure>
+      ) : null}
+      {article.author.slug === "ai-desk" && article.featuredImage?.includes("images.unsplash.com/") ? (
+        <p className="text-xs text-muted-foreground">Illustrative stock image from Unsplash; not a photograph of this event.</p>
       ) : null}
     </header>
   );

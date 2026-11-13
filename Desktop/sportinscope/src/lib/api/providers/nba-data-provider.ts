@@ -88,7 +88,10 @@ async function apiFetch<T>(path: string, revalidateSeconds: number): Promise<T> 
 
 export class NBADataProvider implements SportsDataProvider {
   readonly sport = "NBA" as const;
-  private fallback = new MockSportsProvider("NBA");
+  private get fallback(): MockSportsProvider {
+    console.warn("NBA live data unavailable; attempting development-only demo fallback.");
+    return new MockSportsProvider("NBA");
+  }
 
   async getLiveMatches(): Promise<Match[]> {
     try {
@@ -136,6 +139,10 @@ export class NBADataProvider implements SportsDataProvider {
   }
 
   async getStandings(leagueSlug: string): Promise<Standing[]> {
+    if (process.env.NODE_ENV === "production") {
+      console.warn("NBA standings unavailable: this provider does not implement live standings. Demo tables will not be shown.");
+      return [];
+    }
     return this.fallback.getStandings(leagueSlug);
   }
 

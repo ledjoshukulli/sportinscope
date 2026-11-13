@@ -12,7 +12,11 @@ import { getMockLeagueBySlug } from "@/lib/mock-data/leagues";
  * so pages/components never need to know which one is active.
  */
 export class MockSportsProvider implements SportsDataProvider {
-  constructor(public readonly sport: Sport) {}
+  constructor(public readonly sport: Sport) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(`${sport} live data is unavailable. Demo sports data is disabled in production.`);
+    }
+  }
 
   async getLiveMatches(): Promise<Match[]> {
     return generateMockMatches().filter((m) => m.sport === this.sport && m.status === "LIVE");

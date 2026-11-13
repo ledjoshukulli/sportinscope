@@ -209,11 +209,36 @@ Unit tests currently cover the pure-function layer most valuable to test in isol
 
 ## Deployment
 
+### Automated publishing and content quality
+
+AI Desk articles are automatically published without human pre-publication review.
+The About page and article disclosures describe this process; do not claim a journalist
+reviewed every article unless the workflow actually enforces it.
+
+Demo sports providers are disabled in production, including fallbacks after failed API
+requests. Configure valid `FOOTBALL_API_KEY` and `NBA_API_KEY` credentials; missing or
+failed live data surfaces an error instead of fabricated scores. The current NBA provider
+does not implement live standings and returns an explicitly logged unavailable table.
+
+Match generation requires a supported live-provider external ID and complete scores.
+It adds earlier sourced results from the same league where available, with an incomplete-sample
+warning. It does not infer table positions from potentially seeded database standings.
+Football standings articles use one season from the live provider, include the complete
+snapshot, and have content-based slugs so unchanged tables do not create daily duplicates.
+New generated articles include data/source notes. Existing article bodies are not rewritten.
+
+Before requesting an AdSense review, inspect existing content for seeded/demo figures,
+unsupported claims, repetitive summaries, missing attribution, and empty pages. Correct,
+consolidate, or unpublish affected content through the CMS after checking authoritative
+sources. Do not seed demo content into production. Headline/summary rewrites can still
+lack unique value: technical fixes and AI disclosures do not guarantee AdSense approval.
+No article-count, word-count, or traffic threshold guarantees approval.
+
 The app is a standard Next.js app and deploys cleanly to Vercel or any Node hosting:
 
 1. Set all required environment variables (see [Environment variables](#environment-variables)) in your host's dashboard.
 2. Point `DATABASE_URL`/`DIRECT_URL` at a production Postgres instance (Supabase, Neon, RDS, etc.).
-3. Run migrations against production with `npx prisma migrate deploy` (the `db:migrate` script wraps `prisma migrate dev`, which is dev-only and prompts interactively — use `migrate deploy` in CI/production instead), then seed once (`npm run db:seed`) if you want the bundled demo content live.
+3. Run migrations against production with `npx prisma migrate deploy` (the `db:migrate` script wraps `prisma migrate dev`, which is dev-only and prompts interactively — use `migrate deploy` in CI/production instead). Do not run the demo seed against your public production database.
 4. Build (`npm run build`) and start (`npm run start`), or let your host run these for you.
 
 `next.config.ts` already sets security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) and allow-lists remote image hosts — add any additional image CDN hostnames there.

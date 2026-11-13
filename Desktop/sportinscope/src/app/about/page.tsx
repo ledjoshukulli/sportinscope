@@ -18,23 +18,38 @@ export default function AboutPage() {
       <div className="prose prose-neutral max-w-2xl dark:prose-invert">
         <p>
           {siteConfig.name} — {siteConfig.tagline} — is a digital sports publication covering football and the NBA
-          with the depth of a beat reporter and the speed of a wire service. We cover breaking transfer news,
-          live scores, league standings, and long-form tactical analysis across the sports our readers care about
-          most.
+          through automated match summaries, standings updates, and attributed news reports. Our coverage
+          depends on the data available from our sports-data integrations.
         </p>
         <p>
-          Our newsroom is built around a simple idea: readers deserve context, not just headlines. Every article
-          is written or edited by a dedicated sports journalist, and every score and standing is sourced from
-          the same data pipeline that powers our live coverage — so what you read matches what&apos;s actually
-          happening on the pitch or the court.
+          Articles credited to SportInScope AI Desk are generated with AI and published automatically,
+          without human review before publication. These summaries are not eyewitness reporting.
+          Automated text and third-party data can contain errors, and a final score alone cannot explain
+          tactics, player performance, or why a team won.
         </p>
         <p>
-          {siteConfig.name} currently focuses on football and the NBA, with NFL, MLB, Formula 1, tennis, and NHL
-          coverage planned as the publication grows.
+          New automated articles include reporting notes identifying the available data or underlying
+          report. Historical results shown for context may be an incomplete sample. Stock images are
+          illustrative and should not be taken as photographs of the reported match.
         </p>
         <p>
           Have a tip, correction, or partnership inquiry?{" "}
           <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>.
+        </p>
+      </div>
+      <div className="prose prose-neutral max-w-2xl dark:prose-invert">
+        <h2>Sources and limitations</h2>
+        <p>
+          Football results and tables use football-data.org; NBA results use balldontlie.
+          Our NBA integration does not currently provide live standings. We do not substitute demo
+          tables for unavailable live data in production. News summaries attribute the underlying
+          publisher and do not imply that we independently verified its full report.
+        </p>
+        <h2>Corrections</h2>
+        <p>
+          To report an error, email <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>{" "}
+          with the article URL, the disputed statement, and supporting sources. Do not rely on automated
+          summaries as the sole source for consequential decisions.
         </p>
       </div>
     </div>

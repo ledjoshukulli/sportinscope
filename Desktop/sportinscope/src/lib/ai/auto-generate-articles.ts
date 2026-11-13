@@ -4,6 +4,8 @@ import { estimateReadingTime, slugify } from "@/lib/utils";
 import { generateMatchOfTheRound, generateStandingsRecap, generateTransferArticle, generateViralNewsArticle } from "@/lib/ai/article-generator";
 import { getViralSportsHeadlines } from "@/lib/ai/news-provider";
 import { findArticleImage } from "@/lib/ai/image-finder";
+import { getSportsProvider } from "@/lib/api";
+import { appendReportingNotes, buildMatchContext, getStandingsSnapshot, hasReportedScore } from "./reporting-context";
 import type { Sport } from "@/types";
 
 /** Fixtures aren't tagged with a round/matchday, so an ISO week is used as the round proxy. */
@@ -77,11 +79,13 @@ const AI_AUTHOR_SLUG = "ai-desk";
 async function getOrCreateAiAuthor() {
   return prisma.author.upsert({
     where: { slug: AI_AUTHOR_SLUG },
-    update: {},
+    update: {
+      bio: "Automated articles generated from sports data and attributed reports. Published automatically without human pre-publication review.",
+    },
     create: {
       name: "SportInScope AI Desk",
       slug: AI_AUTHOR_SLUG,
-      bio: "Automated recaps generated from live data. Every draft is reviewed by an editor before publishing.",
+      bio: "Automated articles generated from sports data and attributed reports. Published automatically without human pre-publication review.",
       title: "Automated Reporting",
     },
   });
@@ -143,10 +147,23 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
           continue;
         }
 
-        const standings = await prisma.standing.findMany({
-          where: { leagueId: league.id, teamId: { in: [finished.homeTeamId, finished.awayTeamId] } },
+        if (!hasReportedScore(finished)) {
+          throw new Error("Refusing to publish a match without a live-provider record and complete final score.");
+        }
+        const history = await prisma.match.findMany({
+          where: {
+            leagueId: league.id,
+            status: "FINISHED",
+            startTime: { lt: finished.startTime, gte: new Date(finished.startTime.getTime() - 30 * 86_400_000) },
+            OR: [
+              { homeTeamId: { in: [finished.homeTeamId, finished.awayTeamId] } },
+              { awayTeamId: { in: [finished.homeTeamId, finished.awayTeamId] } },
+            ],
+          },
+          include: { homeTeam: true, awayTeam: true },
+          orderBy: { startTime: "desc" },
         });
-        const positionByTeamId = new Map(standings.map((s) => [s.teamId, s.position]));
+        const context = buildMatchContext(finished, history);
 
         let categorySlug = league.sport === "NBA" ? "nba-news" : "football-news";
         if (league.slug.includes("champions-league") || league.name.toLowerCase().includes("champions league")) {
@@ -165,11 +182,13 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
           leagueName: league.name,
           homeTeamName: finished.homeTeam.name,
           awayTeamName: finished.awayTeam.name,
-          homeScore: finished.homeScore ?? 0,
-          awayScore: finished.awayScore ?? 0,
-          homePosition: positionByTeamId.get(finished.homeTeamId) ?? null,
-          awayPosition: positionByTeamId.get(finished.awayTeamId) ?? null,
+          homeScore: finished.homeScore,
+          awayScore: finished.awayScore,
+          homePosition: null,
+          awayPosition: null,
+          context,
         });
+        const content = appendReportingNotes(generated.content, context);
 
         const tagIds = await resolveTagIds([league.name, finished.homeTeam.name, finished.awayTeam.name, ...generated.tags]);
         const featuredImage = await findArticleImage({
@@ -185,13 +204,13 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
               title: generated.title,
               slug,
               excerpt: generated.excerpt.slice(0, 320),
-              content: generated.content,
+              content,
               featuredImage,
               seoTitle: generated.seoTitle.slice(0, 70),
               metaDescription: generated.metaDescription.slice(0, 160),
               status: "PUBLISHED",
               publishedAt: new Date(),
-              readingTimeMins: estimateReadingTime(generated.content),
+              readingTimeMins: estimateReadingTime(content),
               authorId: author.id,
               categoryId,
               sport: league.sport,
@@ -213,23 +232,18 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
   // --- Standings recaps --------------------------------------------------
   if (input.leagueIds.length > 0 && !isBudgetExceeded()) {
     const leagues = await prisma.league.findMany({ where: { id: { in: input.leagueIds } } });
-    const today = new Date().toISOString().slice(0, 10);
-
     for (const league of leagues) {
       if (isBudgetExceeded()) break;
-      const slug = `standings-update-${league.slug}-${today}`;
       try {
+        if (league.sport !== "FOOTBALL" || !process.env.FOOTBALL_API_KEY) {
+          throw new Error("No supported live standings source configured; demo tables will not become articles.");
+        }
+        const snapshot = getStandingsSnapshot(await getSportsProvider("FOOTBALL").getStandings(league.slug));
+        const slug = `standings-update-${league.slug}-${slugify(snapshot.season)}-${snapshot.key}`;
         if (await articleSlugExists(slug)) {
           result.skipped++;
           continue;
         }
-        const standings = await prisma.standing.findMany({
-          where: { leagueId: league.id },
-          include: { team: true },
-          orderBy: { position: "asc" },
-        });
-        if (standings.length === 0) continue;
-
         const categoryId = await getCategoryIdBySlug("analysis");
         if (!categoryId) {
           result.errors.push(`Standings ${league.slug}: missing category "analysis"`);
@@ -237,7 +251,7 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
         }
         const generated = await generateStandingsRecap({
           leagueName: league.name,
-          rows: standings.map((s) => ({
+          rows: snapshot.rows.map((s) => ({
             position: s.position,
             teamName: s.team.name,
             points: s.points,
@@ -246,7 +260,9 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
             drawn: s.drawn,
             lost: s.lost,
           })),
+          context: snapshot.context,
         });
+        const content = appendReportingNotes(generated.content, snapshot.context);
         const tagIds = await resolveTagIds([league.name, "standings", ...generated.tags]);
         const featuredImage = await findArticleImage({
           query: `${league.name} football table standings stadium`,
@@ -261,13 +277,13 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
               title: generated.title,
               slug,
               excerpt: generated.excerpt.slice(0, 320),
-              content: generated.content,
+              content,
               featuredImage,
               seoTitle: generated.seoTitle.slice(0, 70),
               metaDescription: generated.metaDescription.slice(0, 160),
               status: "PUBLISHED",
               publishedAt: new Date(),
-              readingTimeMins: estimateReadingTime(generated.content),
+              readingTimeMins: estimateReadingTime(content),
               authorId: author.id,
               categoryId,
               sport: league.sport,
@@ -310,7 +326,10 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
         status: transfer.status,
         feeAmount: transfer.feeAmount,
         source: transfer.source,
+        sourceUrl: transfer.sourceUrl,
       });
+      const content = appendReportingNotes(generated.content,
+        `Reported source: ${transfer.source}${transfer.sourceUrl ? ` (${transfer.sourceUrl})` : ". No source URL was supplied."}\n\nDeal status in our record: ${transfer.status}. Reported fee: ${transfer.feeAmount ?? "undisclosed"}.`);
       const leagueId = transfer.toTeam?.leagueId ?? transfer.fromTeam?.leagueId ?? null;
       const tagIds = await resolveTagIds([transfer.playerName, transfer.fromTeam?.name, transfer.toTeam?.name, ...generated.tags]);
       const featuredImage = await findArticleImage({
@@ -326,13 +345,13 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
             title: generated.title,
             slug,
             excerpt: generated.excerpt.slice(0, 320),
-            content: generated.content,
+            content,
             featuredImage,
             seoTitle: generated.seoTitle.slice(0, 70),
             metaDescription: generated.metaDescription.slice(0, 160),
             status: "PUBLISHED",
             publishedAt: new Date(),
-            readingTimeMins: estimateReadingTime(generated.content),
+            readingTimeMins: estimateReadingTime(content),
             authorId: author.id,
             categoryId,
             sport: transfer.sport,
@@ -375,6 +394,8 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
             sourceName: headline.sourceName,
             sourceUrl: headline.url,
           });
+          const content = appendReportingNotes(generated.content,
+            `Underlying report: ${headline.sourceName} (${headline.url}). Source publication time: ${headline.publishedAt}.\n\nThis is based on the source headline and summary, not independent reporting or verification of the full source article.`);
           const sport: Sport = isNba ? "NBA" : "FOOTBALL";
           const tagIds = await resolveTagIds(["trending", ...generated.tags]);
           const featuredImage = await findArticleImage({
@@ -390,13 +411,13 @@ export async function autoGenerateArticles(input: AutoGenerateArticlesInput): Pr
                 title: generated.title,
                 slug,
                 excerpt: generated.excerpt.slice(0, 320),
-                content: generated.content,
+                content,
                 featuredImage,
                 seoTitle: generated.seoTitle.slice(0, 70),
                 metaDescription: generated.metaDescription.slice(0, 160),
                 status: "PUBLISHED",
                 publishedAt: new Date(),
-                readingTimeMins: estimateReadingTime(generated.content),
+                readingTimeMins: estimateReadingTime(content),
                 authorId: author.id,
                 categoryId,
                 sport,

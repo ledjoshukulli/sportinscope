@@ -16,7 +16,7 @@ export default function ContactPage() {
       <Breadcrumbs items={[{ label: "Contact" }]} />
       <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Contact Us</h1>
       <p className="max-w-2xl text-muted-foreground">
-        Have a tip, a correction, or a partnership inquiry? Reach out — a real person reads every message.
+        Have a tip, a correction, or a partnership inquiry? Use the contact details below.
       </p>
 
       <div className="grid max-w-2xl gap-4 sm:grid-cols-2">
@@ -48,7 +48,8 @@ export default function ContactPage() {
         <h2>Editorial tips &amp; corrections</h2>
         <p>
           Spotted an error, or have a story lead? Email us with as much detail as you can — sources, links, and
-          context all help our editors move quickly.
+          context help us investigate. Articles credited to AI Desk are published automatically without
+          human pre-publication review.
         </p>
         <h2>Advertising &amp; partnerships</h2>
         <p>

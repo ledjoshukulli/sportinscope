@@ -149,8 +149,10 @@ async function apiFetch<T>(path: string, revalidateSeconds: number): Promise<T> 
 
 export class FootballDataProvider implements SportsDataProvider {
   readonly sport = "FOOTBALL" as const;
-  /** Falls back to mock data if a live request ever fails, so the site never shows a broken page because of a third-party outage. */
-  private fallback = new MockSportsProvider("FOOTBALL");
+  private get fallback(): MockSportsProvider {
+    console.warn("Football live data unavailable; attempting development-only demo fallback.");
+    return new MockSportsProvider("FOOTBALL");
+  }
   /** In-process cache: without it, getTeamBySlug/getPlayers would re-fetch all
    *  6 competitions' team lists on every call (e.g. once per team during a
    *  player sync), multiplying request volume ~7x against a rate-limited API. */
