@@ -1,17 +1,21 @@
 import { generateArticleFromPrompt, type GeneratedArticleContent } from "./openai-client";
 
 const SYSTEM_PROMPT =
-  "You are a sports news writer for SportInScope, a football and NBA media outlet. " +
-  "Write factual, neutral news copy using ONLY the data given — never invent stats, quotes, " +
-  "injuries, or lineup details that aren't in the input. Respond with ONLY a JSON object: " +
+  "You are a sports journalist writing for SportInScope, a football and NBA media outlet. " +
+  "Write clear, natural newsroom prose for readers, with a specific lead, a logical progression " +
+  "of ideas, and varied sentence structure. Avoid stock phrases, generic transitions, repetitive " +
+  "recaps, and empty conclusions. Use ONLY the supplied data — never invent stats, quotes, " +
+  "injuries, match events, or lineup details. Aim for 800–1,000 words when the supplied evidence " +
+  "supports a genuinely useful article; when it does not, write a shorter, complete piece rather " +
+  "than padding, repeating facts, or speculating. Explain what is known, what remains unknown, " +
+  "and the limits of the data. Respond with ONLY a JSON object: " +
   '{"title": string, "excerpt": string, "content": string, "seoTitle": string, "metaDescription": string, "tags": string[]}. ' +
   '"excerpt" is one sentence (max 200 characters). "content" is plain-text paragraphs ' +
-  "(no markdown headers). Explain the supplied comparisons and their limitations. " +
-  "Do not pad the article by repeating the result or paraphrasing the same fact. " +
+  "(no markdown headers or lists). " +
   "A final score alone does not establish tempo, tactics, defensive quality, or player performance. " +
   "Current table positions do not establish a change in rank or playoff qualification. " +
   "Do not infer those claims or introduce historical facts absent from the input. " +
-  'Use a length justified by the available evidence. "seoTitle" is a search-engine-friendly headline (max 70 characters). ' +
+  '"seoTitle" is a search-engine-friendly headline (max 70 characters). ' +
   '"metaDescription" is a search-result summary (max 155 characters). "tags" is 3-6 short, ' +
   "lowercase keyword tags (team names, league/competition, topic) with no hashtags.";
 
@@ -32,12 +36,12 @@ export type MatchOfTheRoundInput = MatchRecapInput;
 export function generateMatchRecap(input: MatchRecapInput): Promise<GeneratedArticleContent> {
   const homeRank = input.homePosition ? ` (${input.homePosition}${ordinalSuffix(input.homePosition)} in the table)` : "";
   const awayRank = input.awayPosition ? ` (${input.awayPosition}${ordinalSuffix(input.awayPosition)} in the table)` : "";
-  const userPrompt = `Write a short recap article about this match.
+  const userPrompt = `Write a reader-focused report about this match. Aim for 800–1,000 words only when the supplied facts support that much useful detail; otherwise keep it shorter.
 League: ${input.leagueName}
 Result: ${input.homeTeamName}${homeRank} ${input.homeScore} - ${input.awayScore} ${input.awayTeamName}${awayRank}
 Additional sourced data:
 ${input.context ?? "No additional match data is available."}
-Focus on this match and the supplied comparisons. Do not invent goalscorers, lineups, match events, or causes of the result. Positions are a current snapshot, not necessarily the table at kickoff.`;
+Lead with the result, then use the available match date and earlier results to explain the context and its limits. Do not invent goalscorers, lineups, match events, tactics, or causes of the result. Positions are a current snapshot, not necessarily the table at kickoff.`;
   return generateArticleFromPrompt(SYSTEM_PROMPT, userPrompt);
 }
 
@@ -68,7 +72,7 @@ export interface TransferArticleInput {
 }
 
 export function generateTransferArticle(transfer: TransferArticleInput): Promise<GeneratedArticleContent> {
-  const userPrompt = `Write a short transfer news update.
+  const userPrompt = `Write a clear, reader-focused transfer report. Aim for 800–1,000 words only if the supplied reporting contains enough distinct verified details; otherwise write a concise update without speculation.
 Player: ${transfer.playerName}
 From club: ${transfer.fromTeamName ?? "Unattached"}
 To club: ${transfer.toTeamName ?? "Unconfirmed"}
@@ -91,7 +95,7 @@ export function generateStandingsRecap(input: StandingsRecapInput): Promise<Gene
     .slice(0, 10)
     .map((r) => `${r.position}. ${r.teamName} — ${r.points} pts (P${r.played} W${r.won} D${r.drawn} L${r.lost})`)
     .join("\n");
-  const userPrompt = `Write a short league standings update article.
+  const userPrompt = `Write a useful, reader-focused league standings analysis. Aim for 800–1,000 words only when the supplied table and context support that much non-repetitive analysis; otherwise keep it shorter.
 League: ${input.leagueName}
 Current table (top entries, one season only):
 ${table}
@@ -110,7 +114,7 @@ export interface ViralNewsInput {
 
 /** Original commentary piece inspired by a real trending headline — never a copy/paraphrase-for-paraphrase's-sake reproduction of the source. */
 export function generateViralNewsArticle(input: ViralNewsInput): Promise<GeneratedArticleContent> {
-  const userPrompt = `Write an ORIGINAL short news article inspired by this real, currently trending sports headline.
+  const userPrompt = `Write an ORIGINAL, reader-focused news article inspired by this real, currently trending sports headline. Aim for 800–1,000 words only if the supplied source material and verified context support it; otherwise write a shorter update.
 Headline: ${input.headline}
 Source summary: ${input.description ?? "(no summary available)"}
 Source: ${input.sourceName} (${input.sourceUrl})
