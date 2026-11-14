@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { breadcrumbJsonLd, buildMetadata, organizationJsonLd } from "./index";
+import { articleJsonLd, breadcrumbJsonLd, buildMetadata, organizationJsonLd } from "./index";
 import { siteConfig } from "@/config/site";
+import { mockArticles } from "@/lib/mock-data/articles";
 
 describe("buildMetadata", () => {
   it("builds a canonical URL from the given path", () => {
@@ -53,5 +54,17 @@ describe("organizationJsonLd", () => {
     const jsonLd = organizationJsonLd();
     expect(jsonLd.name).toBe(siteConfig.name);
     expect(jsonLd.url).toBe(siteConfig.url);
+  });
+});
+
+describe("articleJsonLd", () => {
+  it("identifies SportInScope as the article author organization", () => {
+    const jsonLd = articleJsonLd(mockArticles[0]!);
+    expect(new Set(mockArticles.map((article) => article.author.name))).toEqual(new Set([siteConfig.name]));
+    expect(jsonLd.author).toEqual({
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url,
+    });
   });
 });

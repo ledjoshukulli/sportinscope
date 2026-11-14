@@ -6,13 +6,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Wand2, Save, Upload, X, Plus } from "lucide-react";
 import { articleInputSchema, type ArticleInput } from "@/lib/validations";
-import type { Article, Author, Category, League, Player, Sport, Tag, Team } from "@/types";
+import type { Article, Category, League, Player, Sport, Tag, Team } from "@/types";
 import { Button } from "@/components/ui/button";
 import { slugify } from "@/lib/utils";
 
 interface ArticleFormProps {
   article?: Article;
-  authors: Author[];
   categories: Category[];
   tags: Tag[];
   teams: Team[];
@@ -26,7 +25,7 @@ const textareaClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const labelClass = "text-sm font-semibold";
 
-export function ArticleForm({ article, authors, categories, tags, teams, leagues, players }: ArticleFormProps) {
+export function ArticleForm({ article, categories, tags, teams, leagues, players }: ArticleFormProps) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -42,7 +41,6 @@ export function ArticleForm({ article, authors, categories, tags, teams, leagues
       content: article?.content ?? "",
       featuredImage: article?.featuredImage ?? "",
       status: article?.status ?? "DRAFT",
-      authorId: article?.author.id ?? "",
       categoryId: article?.category.id ?? "",
       sport: article?.sport ?? "FOOTBALL",
       teamId: article?.team?.id ?? "",
@@ -291,23 +289,6 @@ export function ArticleForm({ article, authors, categories, tags, teams, leagues
             </select>
             {form.formState.errors.categoryId ? (
               <p className="text-xs text-red-500">{form.formState.errors.categoryId.message}</p>
-            ) : null}
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass} htmlFor="authorId">
-              Author
-            </label>
-            <select id="authorId" className={inputClass} {...form.register("authorId")}>
-              <option value="">Select an author</option>
-              {authors.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-            {form.formState.errors.authorId ? (
-              <p className="text-xs text-red-500">{form.formState.errors.authorId.message}</p>
             ) : null}
           </div>
 

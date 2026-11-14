@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Image from "next/image";
 import { getAuthorBySlug } from "@/lib/content/taxonomy";
 import { getPublishedArticles } from "@/lib/content/articles";
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
   }
 
   return buildMetadata({
-    title: `${author.name} — Sports Journalist at SportInScope`,
+    title: `${author.name} — Publisher at SportInScope`,
     description: author.bio ?? `Articles, analysis, and sports coverage by ${author.name} on SportInScope.`,
     path: `/author/${author.slug}`,
     image: author.avatarUrl,
@@ -40,16 +40,13 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
 export default async function AuthorPage({ params, searchParams }: AuthorPageProps) {
   const { slug } = await params;
   const { page } = await searchParams;
+  if (slug !== "sportinscope") permanentRedirect("/author/sportinscope");
   const currentPage = Number(page) || 1;
 
   const author = await getAuthorBySlug(slug);
   if (!author) notFound();
 
-  const { items: articles, hasNextPage } = await getPublishedArticles({
-    authorSlug: author.slug,
-    page: currentPage,
-    limit: 12,
-  });
+  const { items: articles, hasNextPage } = await getPublishedArticles({ page: currentPage, limit: 12 });
 
   const breadcrumbItems = [
     { label: "Home", href: "/" },
@@ -87,7 +84,7 @@ export default async function AuthorPage({ params, searchParams }: AuthorPagePro
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h1 className="font-display text-3xl font-extrabold tracking-tight">{author.name}</h1>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-            {author.title ?? "Sports Journalist"}
+            {author.title ?? "Publisher"}
           </p>
           {author.bio ? <p className="mt-1 text-sm text-muted-foreground">{author.bio}</p> : null}
         </div>

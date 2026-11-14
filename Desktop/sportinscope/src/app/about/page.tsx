@@ -22,7 +22,7 @@ export default function AboutPage() {
           depends on the data available from our sports-data integrations.
         </p>
         <p>
-          Articles credited to SportInScope AI Desk are generated with AI and published automatically,
+          Articles credited to SportInScope are generated with AI and published automatically,
           without human review before publication. These summaries are not eyewitness reporting.
           Automated text and third-party data can contain errors, and a final score alone cannot explain
           tactics, player performance, or why a team won.

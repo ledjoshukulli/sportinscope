@@ -24,57 +24,20 @@ export const mockTags: Tag[] = [
   { id: "tag-tactics", name: "Tactics", slug: "tactics" },
 ];
 
-export const mockAuthors: Author[] = [
-  {
-    id: "author-james-whitfield",
-    name: "James Whitfield",
-    slug: "james-whitfield",
-    bio: "James covers the Premier League and European football for SportInScope, with a focus on tactics and transfers.",
-    title: "Senior Football Writer",
-    avatarUrl: "/authors/james-whitfield.jpg",
-    twitter: "https://twitter.com/jwhitfieldsis",
-  },
-  {
-    id: "author-maria-santos",
-    name: "Maria Santos",
-    slug: "maria-santos",
-    bio: "Maria reports on La Liga and the Champions League, and has covered European football for over a decade.",
-    title: "European Football Correspondent",
-    avatarUrl: "/authors/maria-santos.jpg",
-    twitter: "https://twitter.com/mariasantossis",
-  },
-  {
-    id: "author-marcus-lee",
-    name: "Marcus Lee",
-    slug: "marcus-lee",
-    bio: "Marcus leads SportInScope's NBA coverage, breaking trade news and analyzing the league night after night.",
-    title: "Senior NBA Writer",
-    avatarUrl: "/authors/marcus-lee.jpg",
-    twitter: "https://twitter.com/marcusleesis",
-  },
-  {
-    id: "author-aisha-brown",
-    name: "Aisha Brown",
-    slug: "aisha-brown",
-    bio: "Aisha covers NBA trade rumors and roster construction across the league.",
-    title: "NBA Insider",
-    avatarUrl: "/authors/aisha-brown.jpg",
-    twitter: "https://twitter.com/aishabrownsis",
-  },
-  {
-    id: "author-editorial-team",
-    name: "SportInScope Staff",
-    slug: "sportinscope-staff",
-    bio: "Reporting and analysis from the SportInScope editorial desk.",
-    title: "Editorial Team",
-    avatarUrl: "/authors/staff.jpg",
-  },
-];
+export const sportInScopeAuthor: Author = {
+  id: "author-sportinscope",
+  name: "SportInScope",
+  slug: "sportinscope",
+  bio: "Reporting and analysis from SportInScope.",
+  title: "Publisher",
+};
+
+export const mockAuthors: Author[] = [sportInScopeAuthor];
 
 export function getMockCategoryBySlug(slug: string): Category | undefined {
   return mockCategories.find((c) => c.slug === slug);
 }
 
 export function getMockAuthorBySlug(slug: string): Author | undefined {
-  return mockAuthors.find((a) => a.slug === slug);
+  return slug === sportInScopeAuthor.slug ? sportInScopeAuthor : undefined;
 }

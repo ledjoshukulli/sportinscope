@@ -1,15 +1,10 @@
 import type { Article } from "@/types";
-import { mockAuthors, mockCategories, mockTags } from "./taxonomy";
+import { mockCategories, mockTags, sportInScopeAuthor } from "./taxonomy";
 import { mockTeams } from "./teams";
 import { mockLeagues } from "./leagues";
 import { mockPlayers } from "./players";
 import { estimateReadingTime } from "@/lib/utils";
 
-function author(slug: string) {
-  const a = mockAuthors.find((x) => x.slug === slug);
-  if (!a) throw new Error(`author not found: ${slug}`);
-  return a;
-}
 function category(slug: string) {
   const c = mockCategories.find((x) => x.slug === slug);
   if (!c) throw new Error(`category not found: ${slug}`);
@@ -52,7 +47,6 @@ interface Seed {
   excerpt: string;
   content: string;
   featuredImage: string;
-  authorSlug: string;
   categorySlug: string;
   sport: Article["sport"];
   teamSlug?: string;
@@ -81,7 +75,6 @@ Financially, Arsenal are believed to have more room to operate than in previous 
 
 As always with transfer speculation this far out from the window opening, nothing is imminent, and the situation could shift considerably depending on how the rest of the season unfolds. SportInScope will continue to track developments as they emerge.`,
     featuredImage: IMG.soccerAction,
-    authorSlug: "james-whitfield",
     categorySlug: "football-news",
     sport: "FOOTBALL",
     teamSlug: "arsenal",
@@ -106,7 +99,6 @@ Set pieces could also be decisive. Both sides have scored a significant share of
 
 Expect a tightly contested encounter decided by moments rather than sustained dominance from either side.`,
     featuredImage: IMG.soccerStadium,
-    authorSlug: "james-whitfield",
     categorySlug: "analysis",
     sport: "FOOTBALL",
     teamSlug: "arsenal",
@@ -127,7 +119,6 @@ The champions have leaned on squad rotation to manage the physical toll of compe
 
 City's underlying numbers remain strong across most metrics tracked by analysts, but small dips in defensive solidity on the road have been noted by observers this season. How the coaching staff manage rotation without disrupting the team's rhythm will likely determine whether City can maintain their position at the top of the table through the run.`,
     featuredImage: IMG.soccerField,
-    authorSlug: "james-whitfield",
     categorySlug: "analysis",
     sport: "FOOTBALL",
     teamSlug: "manchester-city",
@@ -150,7 +141,6 @@ The tactical duel between these two approaches has produced some of the most mem
 
 Whichever side leaves the Bernabéu with three points will take a significant psychological advantage into the second half of the season.`,
     featuredImage: IMG.soccerAction,
-    authorSlug: "maria-santos",
     categorySlug: "football-news",
     sport: "FOOTBALL",
     teamSlug: "real-madrid",
@@ -173,7 +163,6 @@ Elsewhere, several English and Spanish clubs have the opportunity to secure qual
 
 SportInScope will provide live coverage and instant reaction as results come in across the week.`,
     featuredImage: IMG.soccerStadium,
-    authorSlug: "maria-santos",
     categorySlug: "champions-league-news",
     sport: "FOOTBALL",
     leagueSlug: "champions-league",
@@ -193,7 +182,6 @@ That strategy reflects lessons learned from previous windows, where big-name arr
 
 The approach has coincided with continued domestic dominance, though the club's ambitions in the Champions League remain the ultimate measure of success for a squad of this caliber.`,
     featuredImage: IMG.soccerField,
-    authorSlug: "maria-santos",
     categorySlug: "transfers",
     sport: "FOOTBALL",
     teamSlug: "bayern-munich",
@@ -216,7 +204,6 @@ Chelsea's recruitment team has been tracking Osimhen for an extended period, vie
 
 It's important to stress that, as with all reported transfer negotiations, terms can change quickly and a deal is not guaranteed to be completed. SportInScope will continue to monitor the situation and update as it develops.`,
     featuredImage: IMG.soccerAction,
-    authorSlug: "james-whitfield",
     categorySlug: "transfers",
     sport: "FOOTBALL",
     teamSlug: "chelsea",
@@ -237,7 +224,6 @@ Golden State's perimeter shooting kept them within striking distance for most of
 
 Bench production proved to be a difference-maker, with role players stepping up in minutes when starters were managing foul trouble. The result keeps the Lakers within range of the top of the conference standings heading into a stretch of divisional matchups.`,
     featuredImage: IMG.basketballAction,
-    authorSlug: "marcus-lee",
     categorySlug: "nba-news",
     sport: "NBA",
     teamSlug: "lakers",
@@ -261,7 +247,6 @@ Several teams sit in the middle — competitive enough to stay in the play-in co
 
 SportInScope's NBA desk will track every deal as it's reported.`,
     featuredImage: IMG.basketballCourt,
-    authorSlug: "aisha-brown",
     categorySlug: "trade-rumors",
     sport: "NBA",
     leagueSlug: "nba",
@@ -281,7 +266,6 @@ The team's medical staff have generally taken a conservative approach with soft-
 
 Fans should expect official status updates closer to tip-off, as is standard practice, with the questionable tag often not resolved until shortly before the game begins.`,
     featuredImage: IMG.basketballHoop,
-    authorSlug: "aisha-brown",
     categorySlug: "nba-news",
     sport: "NBA",
     teamSlug: "celtics",
@@ -302,7 +286,6 @@ Beyond the raw scoring and rebounding numbers, what stands out is his efficiency
 
 The counterargument typically centers on team success relative to other candidates' teams, a factor voters have weighted heavily in past MVP races. Where Milwaukee finishes in the standings over the season's second half will likely determine how strong his case ultimately looks come voting time.`,
     featuredImage: IMG.basketballGame,
-    authorSlug: "marcus-lee",
     categorySlug: "analysis",
     sport: "NBA",
     teamSlug: "bucks",
@@ -324,7 +307,6 @@ The Nuggets' ball movement in the half-court set continued to create quality loo
 
 The win keeps Denver near the top of the conference standings as they head into a stretch of games against fellow playoff contenders.`,
     featuredImage: IMG.basketballAction,
-    authorSlug: "marcus-lee",
     categorySlug: "nba-news",
     sport: "NBA",
     teamSlug: "nuggets",
@@ -346,7 +328,6 @@ That means pressing triggers activated high up the pitch, often targeting the mo
 
 The risk, of course, is exposure in behind if the press is beaten, given City's attacking players' pace in transition. Expect Liverpool to calibrate the intensity of their press based on the scoreline and game state as the match progresses.`,
     featuredImage: IMG.soccerField,
-    authorSlug: "james-whitfield",
     categorySlug: "analysis",
     sport: "FOOTBALL",
     teamSlug: "liverpool",
@@ -367,7 +348,6 @@ The shift has coincided with strong underlying attacking metrics, including impr
 
 Whether that identity holds up against the division's most well-organized defenses — and in the Champions League against Europe's elite — remains the biggest question of their season.`,
     featuredImage: IMG.soccerAction,
-    authorSlug: "maria-santos",
     categorySlug: "analysis",
     sport: "FOOTBALL",
     teamSlug: "psg",
@@ -386,7 +366,6 @@ Whether that identity holds up against the division's most well-organized defens
 
 Depth at forward remains a point of discussion among analysts covering the team, with the Warriors' perimeter-heavy approach sometimes leaving them light on size against bigger frontcourts. How the front office addresses that balance — through the trade market, free agency, or simply developing younger players already on the roster — will be a storyline worth following through the rest of the season.`,
     featuredImage: IMG.basketballCourt,
-    authorSlug: "aisha-brown",
     categorySlug: "analysis",
     sport: "NBA",
     teamSlug: "warriors",
@@ -409,7 +388,6 @@ Bullet points below to be turned into prose:
 - Team B eyeing draft-pick consolidation
 - Team C described as "aggressive" trade partner`,
     featuredImage: IMG.basketballHoop,
-    authorSlug: "aisha-brown",
     categorySlug: "trade-rumors",
     sport: "NBA",
     leagueSlug: "nba",
@@ -425,7 +403,6 @@ Bullet points below to be turned into prose:
     excerpt: "Internal draft outlining live-coverage plan for deadline day — not yet ready for publication.",
     content: `Draft planning notes for deadline-day live coverage: staffing rotation, which leagues to prioritize, and social posting cadence. To be finalized with the editorial team before deadline day.`,
     featuredImage: IMG.soccerBall,
-    authorSlug: "sportinscope-staff",
     categorySlug: "transfers",
     sport: "FOOTBALL",
     tagSlugs: ["transfer-news"],
@@ -453,7 +430,7 @@ export const mockArticles: Article[] = seeds.map((s) => {
     seoTitle: null,
     metaDescription: s.excerpt,
     canonicalUrl: null,
-    author: author(s.authorSlug),
+    author: sportInScopeAuthor,
     category: category(s.categorySlug),
     sport: s.sport,
     team: s.teamSlug ? team(s.teamSlug) : null,

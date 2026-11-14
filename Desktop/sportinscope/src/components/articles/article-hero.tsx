@@ -55,7 +55,7 @@ export function ArticleHero({ article, className }: ArticleHeroProps) {
             </span>
           </span>
         </div>
-        {article.author.slug === "ai-desk" ? (
+        {article.isAiGenerated ? (
           <p className="rounded-md border border-border bg-surface p-3 text-sm text-muted-foreground">
             AI-generated and automatically published without human pre-publication review.{" "}
             <Link href="/about" className="text-primary underline">Sources, limitations, and corrections</Link>.
@@ -77,7 +77,7 @@ export function ArticleHero({ article, className }: ArticleHeroProps) {
           />
         </figure>
       ) : null}
-      {article.author.slug === "ai-desk" && article.featuredImage?.includes("images.unsplash.com/") ? (
+      {article.isAiGenerated && article.featuredImage?.includes("images.unsplash.com/") ? (
         <p className="text-xs text-muted-foreground">Illustrative stock image from Unsplash; not a photograph of this event.</p>
       ) : null}
     </header>

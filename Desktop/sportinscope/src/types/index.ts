@@ -147,6 +147,7 @@ export interface Article {
   canonicalUrl?: string | null;
 
   author: Author;
+  isAiGenerated?: boolean;
   category: Category;
   sport: Sport;
   team?: Team | null;

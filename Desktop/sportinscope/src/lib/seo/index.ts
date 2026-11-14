@@ -103,9 +103,9 @@ export function articleJsonLd(article: Article) {
     isAccessibleForFree: true,
     keywords,
     author: {
-      "@type": "Person",
-      name: article.author.name,
-      url: `${siteConfig.url}/author/${article.author.slug}`,
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url,
     },
     publisher: {
       "@type": "Organization",
@@ -176,16 +176,12 @@ export function sportsEventJsonLd(match: Match) {
 export function authorJsonLd(author: Author) {
   return {
     "@context": "https://schema.org",
-    "@type": "Person",
+    "@type": "Organization",
     name: author.name,
     url: `${siteConfig.url}/author/${author.slug}`,
-    image: author.avatarUrl ?? undefined,
     description: author.bio ?? undefined,
-    jobTitle: author.title ?? "Sports Journalist",
-    worksFor: {
-      "@type": "Organization",
-      name: siteConfig.name,
-    },
+    logo: `${siteConfig.url}/logo.png`,
+    sameAs: [siteConfig.social.twitter, siteConfig.social.facebook, siteConfig.social.instagram],
   };
 }
 

@@ -83,7 +83,7 @@ async function getOrCreateAiAuthor() {
       bio: "Automated articles generated from sports data and attributed reports. Published automatically without human pre-publication review.",
     },
     create: {
-      name: "SportInScope AI Desk",
+      name: "SportInScope",
       slug: AI_AUTHOR_SLUG,
       bio: "Automated articles generated from sports data and attributed reports. Published automatically without human pre-publication review.",
       title: "Automated Reporting",

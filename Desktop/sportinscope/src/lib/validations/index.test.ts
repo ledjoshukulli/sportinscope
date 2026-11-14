@@ -14,7 +14,6 @@ const validArticle = {
   excerpt: "A short excerpt describing the story.",
   content: "This is a sufficiently long article body used purely for validation testing purposes.",
   status: "PUBLISHED" as const,
-  authorId: "author-1",
   categoryId: "cat-1",
   sport: "FOOTBALL" as const,
   tagIds: [],
@@ -24,6 +23,12 @@ describe("articleInputSchema", () => {
   it("accepts a well-formed article", () => {
     const result = articleInputSchema.safeParse(validArticle);
     expect(result.success).toBe(true);
+  });
+
+  it("does not accept an author override", () => {
+    const result = articleInputSchema.safeParse({ ...validArticle, authorId: "another-author" });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).not.toHaveProperty("authorId");
   });
 
   it("rejects a title that is too short", () => {

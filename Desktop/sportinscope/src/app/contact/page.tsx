@@ -48,7 +48,7 @@ export default function ContactPage() {
         <h2>Editorial tips &amp; corrections</h2>
         <p>
           Spotted an error, or have a story lead? Email us with as much detail as you can — sources, links, and
-          context help us investigate. Articles credited to AI Desk are published automatically without
+          context help us investigate. Some SportInScope articles are published automatically without
           human pre-publication review.
         </p>
         <h2>Advertising &amp; partnerships</h2>

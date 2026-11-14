@@ -1,6 +1,6 @@
 import type { Author, Category, Tag } from "@/types";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
-import { mockAuthors, mockCategories, mockTags } from "@/lib/mock-data/taxonomy";
+import { mockAuthors, mockCategories, mockTags, sportInScopeAuthor } from "@/lib/mock-data/taxonomy";
 
 export async function getCategories(): Promise<Category[]> {
   if (isDatabaseConfigured()) return prisma.category.findMany({ orderBy: { name: "asc" } });
@@ -37,11 +37,33 @@ export async function createTag(input: { name: string; slug: string }) {
 }
 
 export async function getAuthors(): Promise<Author[]> {
-  if (isDatabaseConfigured()) return prisma.author.findMany({ orderBy: { name: "asc" } });
+  if (isDatabaseConfigured()) return [await getSportInScopeAuthor()];
   return mockAuthors;
 }
 
+export async function getSportInScopeAuthor(): Promise<Author> {
+  if (!isDatabaseConfigured()) return sportInScopeAuthor;
+
+  return prisma.author.upsert({
+    where: { slug: sportInScopeAuthor.slug },
+    update: {
+      name: sportInScopeAuthor.name,
+      bio: sportInScopeAuthor.bio,
+      title: sportInScopeAuthor.title,
+      avatarUrl: null,
+      twitter: null,
+    },
+    create: {
+      id: sportInScopeAuthor.id,
+      name: sportInScopeAuthor.name,
+      slug: sportInScopeAuthor.slug,
+      bio: sportInScopeAuthor.bio,
+      title: sportInScopeAuthor.title,
+    },
+  });
+}
+
 export async function getAuthorBySlug(slug: string): Promise<Author | null> {
-  if (isDatabaseConfigured()) return prisma.author.findUnique({ where: { slug } });
-  return mockAuthors.find((a) => a.slug === slug) ?? null;
+  if (slug !== sportInScopeAuthor.slug) return null;
+  return getSportInScopeAuthor();
 }

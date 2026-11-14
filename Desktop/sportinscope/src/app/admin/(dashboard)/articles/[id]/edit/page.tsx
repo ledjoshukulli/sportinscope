@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getArticleById } from "@/lib/content/articles";
-import { getAuthors, getCategories, getTags } from "@/lib/content/taxonomy";
+import { getCategories, getTags } from "@/lib/content/taxonomy";
 import { getAllTeams } from "@/lib/content/teams";
 import { getAllLeagues } from "@/lib/content/leagues";
 import { getAllPlayers } from "@/lib/content/players";
@@ -21,9 +21,8 @@ interface EditArticlePageProps {
 
 export default async function EditArticlePage({ params }: EditArticlePageProps) {
   const { id } = await params;
-  const [article, authors, categories, tags, teams, leagues, players] = await Promise.all([
+  const [article, categories, tags, teams, leagues, players] = await Promise.all([
     getArticleById(id),
-    getAuthors(),
     getCategories(),
     getTags(),
     getAllTeams(),
@@ -38,7 +37,6 @@ export default async function EditArticlePage({ params }: EditArticlePageProps) 
       <h1 className="font-display text-2xl font-extrabold tracking-tight">Edit Article</h1>
       <ArticleForm
         article={article}
-        authors={authors}
         categories={categories}
         tags={tags}
         teams={teams}

@@ -3,7 +3,8 @@ import { isDatabaseConfigured, prisma } from "@/lib/db";
 import { mockArticles } from "@/lib/mock-data/articles";
 import { estimateReadingTime, slugify } from "@/lib/utils";
 import type { ArticleInput } from "@/lib/validations";
-import { mockAuthors, mockCategories, mockTags } from "@/lib/mock-data/taxonomy";
+import { mockCategories, mockTags, sportInScopeAuthor } from "@/lib/mock-data/taxonomy";
+import { getSportInScopeAuthor } from "@/lib/content/taxonomy";
 import { mockTeams } from "@/lib/mock-data/teams";
 import { mockLeagues } from "@/lib/mock-data/leagues";
 import { mockPlayers } from "@/lib/mock-data/players";
@@ -29,7 +30,6 @@ interface ListOptions {
   sport?: Sport;
   categorySlug?: string;
   teamSlug?: string;
-  authorSlug?: string;
   tagSlug?: string;
   includeDrafts?: boolean;
   status?: Article["status"];
@@ -39,7 +39,6 @@ function matchesFilters(a: Article, opts: ListOptions): boolean {
   if (opts.sport && a.sport !== opts.sport) return false;
   if (opts.categorySlug && a.category.slug !== opts.categorySlug) return false;
   if (opts.teamSlug && a.team?.slug !== opts.teamSlug) return false;
-  if (opts.authorSlug && a.author.slug !== opts.authorSlug) return false;
   if (opts.tagSlug && !a.tags.some((t) => t.slug === opts.tagSlug)) return false;
   if (opts.status) return a.status === opts.status;
   if (!opts.includeDrafts) return a.status === "PUBLISHED";
@@ -57,7 +56,6 @@ export async function getPublishedArticles(opts: ListOptions = {}): Promise<Pagi
       ...(opts.sport ? { sport: opts.sport } : {}),
       ...(opts.categorySlug ? { category: { slug: opts.categorySlug } } : {}),
       ...(opts.teamSlug ? { team: { slug: opts.teamSlug } } : {}),
-      ...(opts.authorSlug ? { author: { slug: opts.authorSlug } } : {}),
       ...(opts.tagSlug ? { tags: { some: { tag: { slug: opts.tagSlug } } } } : {}),
     };
     const [total, rows] = await Promise.all([
@@ -221,14 +219,12 @@ export async function getAdminDashboardStats() {
 }
 
 function resolveRelations(input: ArticleInput) {
-  const author = mockAuthors.find((a) => a.id === input.authorId);
   const category = mockCategories.find((c) => c.id === input.categoryId);
-  if (!author) throw new Error("Unknown author");
   if (!category) throw new Error("Unknown category");
   const team = input.teamId ? mockTeams.find((t) => t.id === input.teamId) ?? null : null;
   const league = input.leagueId ? mockLeagues.find((l) => l.id === input.leagueId) ?? null : null;
   const player = input.playerId ? mockPlayers.find((p) => p.id === input.playerId) ?? null : null;
-  return { author, category, team, league, player };
+  return { author: sportInScopeAuthor, category, team, league, player };
 }
 
 function getCleanTagInputs(input: ArticleInput): string[] {
@@ -295,6 +291,7 @@ export async function createArticle(input: ArticleInput): Promise<Article> {
 
   if (isDatabaseConfigured()) {
     const tagIds = await resolveDbTagIds(cleanTags);
+    const author = await getSportInScopeAuthor();
     const row = await prisma.article.create({
       data: {
         title: input.title,
@@ -308,7 +305,7 @@ export async function createArticle(input: ArticleInput): Promise<Article> {
         seoTitle: input.seoTitle || null,
         metaDescription: input.metaDescription || null,
         canonicalUrl: input.canonicalUrl || null,
-        authorId: input.authorId,
+        authorId: author.id,
         categoryId: input.categoryId,
         sport: input.sport,
         teamId: input.teamId || null,
@@ -371,7 +368,6 @@ export async function updateArticle(id: string, input: ArticleInput): Promise<Ar
         seoTitle: input.seoTitle || null,
         metaDescription: input.metaDescription || null,
         canonicalUrl: input.canonicalUrl || null,
-        authorId: input.authorId,
         categoryId: input.categoryId,
         sport: input.sport,
         teamId: input.teamId || null,
@@ -503,7 +499,8 @@ function fromPrisma(row: PrismaArticleRow): Article {
     seoTitle: row.seoTitle,
     metaDescription: row.metaDescription,
     canonicalUrl: row.canonicalUrl,
-    author: row.author,
+    author: sportInScopeAuthor,
+    isAiGenerated: row.author.slug === "ai-desk",
     category: row.category,
     sport: row.sport,
     team: row.team,

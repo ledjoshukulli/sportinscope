@@ -22,7 +22,6 @@ export const articleInputSchema = z.object({
   featuredImage: z.string().url().optional().or(z.literal("")),
   status: articleStatusSchema.default("DRAFT"),
   publishedAt: z.string().datetime().optional().nullable(),
-  authorId: z.string().min(1, "Author is required"),
   categoryId: z.string().min(1, "Category is required"),
   sport: sportSchema,
   teamId: z.string().optional().nullable(),
